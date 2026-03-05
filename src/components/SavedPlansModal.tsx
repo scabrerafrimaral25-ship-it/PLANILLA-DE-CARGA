@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Save, Loader2, Trash2, Download, Plus } from 'lucide-react';
+import { X, Save, Loader as Loader2, Trash2, Download, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { LoadingPlan, getAllPlans, deletePlan } from '../services/loadingPlansService';
 import { PalletData } from '../types';
