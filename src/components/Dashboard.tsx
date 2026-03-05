@@ -14,12 +14,22 @@ interface DashboardProps {
 
 const COLORS = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
+interface DashboardProps {
+  groups: ContainerGroup[];
+  searchIds: string[];
+  totalPallets: number;
+  totalBoxes: number;
+  totalWeight: number;
+  masterDataLength?: number;
+}
+
 export const Dashboard: React.FC<DashboardProps> = ({
   groups,
   searchIds,
   totalPallets,
   totalBoxes,
   totalWeight,
+  masterDataLength = 0,
 }) => {
   const containerData = groups.map((group, index) => ({
     name: group.containerId.substring(0, 12) + '...',
@@ -36,7 +46,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }));
 
   const scannedCount = searchIds.length;
-  const progressPercentage = totalPallets > 0 ? Math.round((scannedCount / totalPallets) * 100) : 0;
+  const progressPercentage = masterDataLength > 0 ? Math.round((scannedCount / masterDataLength) * 100) : 0;
 
   return (
     <motion.div
@@ -51,7 +61,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-sm font-medium opacity-80">Progreso</span>
           </div>
           <div className="text-4xl font-bold mb-1">{progressPercentage}%</div>
-          <div className="text-sm opacity-80">{scannedCount} de {totalPallets} pallets</div>
+          <div className="text-sm opacity-80">{scannedCount} de {masterDataLength} pallets</div>
           <div className="w-full bg-white/20 rounded-full h-2 mt-3">
             <div
               className="bg-white rounded-full h-2 transition-all duration-500"

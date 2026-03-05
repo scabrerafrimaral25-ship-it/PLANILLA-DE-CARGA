@@ -10,11 +10,13 @@ import { LoadingPlan } from './components/LoadingPlan';
 import { Dashboard } from './components/Dashboard';
 import { ProgressBar } from './components/ProgressBar';
 import { ToastProvider } from './components/ToastProvider';
+import { SavedPlansModal } from './components/SavedPlansModal';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
 import { PalletData, ContainerGroup } from './types';
+import { savePlan } from './services/loadingPlansService';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, CircleAlert as AlertCircle, Moon, Sun } from 'lucide-react';
+import { PackageCheck, CircleAlert as AlertCircle, Moon, Sun, FolderOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function AppContent() {
@@ -24,6 +26,7 @@ function AppContent() {
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
   const [searchIds, setSearchIds] = useState<string[]>([]);
+  const [savedPlansModalOpen, setSavedPlansModalOpen] = useState(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem('pallet_master_data');
@@ -94,6 +97,20 @@ function AppContent() {
 
   const handleClearSearch = () => {
     setSearchIds([]);
+  };
+
+  const handleLoadPlan = (data: PalletData[], ids: string[]) => {
+    setMasterData(data);
+    setSearchIds(ids);
+  };
+
+  const handleSavePlan = async (planName: string) => {
+    const saved = await savePlan(planName, masterData, searchIds);
+    if (saved) {
+      toast.success(`Planilla "${planName}" guardada`);
+    } else {
+      toast.error('Error al guardar la planilla');
+    }
   };
 
   const { groups, notFoundIds } = useMemo(() => {
@@ -174,6 +191,15 @@ function AppContent() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            {masterData.length > 0 && (
+              <button
+                onClick={() => setSavedPlansModalOpen(true)}
+                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+              >
+                <FolderOpen className="w-5 h-5" />
+                <span className="hidden sm:inline">Mis Planillas</span>
+              </button>
+            )}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
@@ -323,6 +349,7 @@ function AppContent() {
                   totalPallets={grandTotals.pallets}
                   totalBoxes={grandTotals.boxes}
                   totalWeight={grandTotals.weight}
+                  masterDataLength={masterData.length}
                 />
               )}
 
@@ -344,6 +371,15 @@ function AppContent() {
           <p>&copy; {new Date().getFullYear()} Gestor de Carga de Pallets. Todos los derechos reservados.</p>
         </div>
       </footer>
+
+      <SavedPlansModal
+        isOpen={savedPlansModalOpen}
+        onClose={() => setSavedPlansModalOpen(false)}
+        onLoadPlan={handleLoadPlan}
+        onSavePlan={handleSavePlan}
+        masterData={masterData}
+        searchIds={searchIds}
+      />
     </div>
   );
 }
