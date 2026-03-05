@@ -50,7 +50,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        className="border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center hover:border-indigo-500 hover:bg-slate-50 transition-colors cursor-pointer bg-white shadow-sm"
+        className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-12 text-center hover:border-green-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer bg-white dark:bg-slate-800 shadow-sm"
       >
         <input
           type="file"
@@ -60,17 +60,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
           onChange={handleFileSelect}
         />
         <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-          <div className="bg-indigo-50 p-4 rounded-full mb-4">
-            <FileSpreadsheet className="w-10 h-10 text-indigo-600" />
+          <div className="bg-green-50 dark:bg-green-900 p-4 rounded-full mb-4">
+            <FileSpreadsheet className="w-10 h-10 text-green-600 dark:text-green-400" />
           </div>
-          <h3 className="text-xl font-semibold text-slate-900 mb-2">
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
             Sube tu planilla Excel
           </h3>
-          <p className="text-slate-500 mb-6 max-w-sm mx-auto">
+          <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-sm mx-auto">
             Arrastra y suelta tu archivo aquí, o haz clic para seleccionar.
             Soportamos formatos .xlsx y .xls
           </p>
-          <span className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+          <span className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
             <Upload className="w-4 h-4 mr-2" />
             Seleccionar Archivo
           </span>

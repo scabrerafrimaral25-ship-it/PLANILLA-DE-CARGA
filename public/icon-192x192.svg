@@ -1,0 +1,5 @@
+<svg width="192" height="192" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" fill="#4f46e5" rx="24"/>
+  <path d="M96 48 L144 72 L144 120 L96 144 L48 120 L48 72 Z" fill="white" stroke="white" stroke-width="4"/>
+  <text x="96" y="108" font-family="Arial" font-size="48" font-weight="bold" fill="#4f46e5" text-anchor="middle">P</text>
+</svg>

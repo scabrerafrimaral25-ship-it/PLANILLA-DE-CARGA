@@ -1,0 +1,27 @@
+{
+  "short_name": "Gestor Carga",
+  "name": "Gestor de Carga de Pallets",
+  "description": "Herramienta para procesar planillas Excel, buscar pallets y generar planes de carga por contenedor",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "orientation": "any",
+  "scope": "/",
+  "categories": ["business", "productivity"],
+  "lang": "es"
+}

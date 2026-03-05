@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ContainerGroup, PalletData } from '../types';
 import { motion } from 'motion/react';
-import { Package, Truck, FileText, Download, Printer } from 'lucide-react';
+import { Package, Truck, FileText, Download, Printer, ChevronDown, ChevronUp } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
 
 interface LoadingPlanProps {
@@ -11,6 +11,21 @@ interface LoadingPlanProps {
 }
 
 export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, searchIds }) => {
+  const [expandedContainers, setExpandedContainers] = useState<Set<string>>(
+    new Set(groups.map(g => g.containerId))
+  );
+
+  const toggleContainer = (containerId: string) => {
+    setExpandedContainers(prev => {
+      const next = new Set(prev);
+      if (next.has(containerId)) {
+        next.delete(containerId);
+      } else {
+        next.add(containerId);
+      }
+      return next;
+    });
+  };
   
   // Calculate grand totals for SEARCHED items only
   const grandTotals = groups.reduce(
@@ -281,31 +296,44 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
       )}
 
       <div className="grid gap-8 print:block print:gap-0">
-        {groups.map((group) => (
-          <div key={group.containerId} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-0 print:mb-8 print:break-inside-avoid">
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center print:bg-slate-100 print:border-slate-300">
-              <div className="flex items-center gap-3">
-                <div className="bg-indigo-100 p-2 rounded-lg print:hidden">
-                  <Truck className="w-5 h-5 text-indigo-600" />
+        {groups.map((group) => {
+          const isExpanded = expandedContainers.has(group.containerId);
+          return (
+            <div key={group.containerId} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden print:shadow-none print:border-0 print:mb-8 print:break-inside-avoid">
+              <div
+                className="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-b border-slate-100 dark:border-slate-600 flex justify-between items-center print:bg-slate-100 print:border-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors print:cursor-default"
+                onClick={() => toggleContainer(group.containerId)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-100 dark:bg-green-900 p-2 rounded-lg print:hidden">
+                    <Truck className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{group.containerId}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 print:hidden">Contenedor</p>
+                  </div>
+                  <button className="ml-2 print:hidden">
+                    {isExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-slate-400" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-slate-400" />
+                    )}
+                  </button>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">{group.containerId}</h3>
-                  <p className="text-sm text-slate-500 print:hidden">Contenedor</p>
+                <div className="flex gap-6 text-right">
+                  <div>
+                    <span className="block text-xs text-slate-400 dark:text-slate-500 uppercase font-semibold">Pallets</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">{group.pallets.length}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs text-slate-400 dark:text-slate-500 uppercase font-semibold">Peso Total</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">{group.totalWeight.toLocaleString()} kg</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-6 text-right">
-                <div>
-                  <span className="block text-xs text-slate-400 uppercase font-semibold">Pallets</span>
-                  <span className="font-mono font-bold text-slate-900">{group.pallets.length}</span>
-                </div>
-                <div>
-                  <span className="block text-xs text-slate-400 uppercase font-semibold">Peso Total</span>
-                  <span className="font-mono font-bold text-slate-900">{group.totalWeight.toLocaleString()} kg</span>
-                </div>
-              </div>
-            </div>
 
-            <div className="overflow-x-auto">
+              {isExpanded && (
+                <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-500 bg-white">
@@ -359,9 +387,11 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
                   </tr>
                 </tfoot>
               </table>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </motion.div>
   );
