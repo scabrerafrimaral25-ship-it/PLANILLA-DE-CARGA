@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Search, X, Plus, FileText, Upload, Trash2, AlertCircle, Camera } from 'lucide-react';
+import { Search, X, Plus, FileText, Upload, Trash2, CircleAlert as AlertCircle, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
 import { parsePdfFile } from '../utils/pdf';

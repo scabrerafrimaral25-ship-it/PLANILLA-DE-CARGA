@@ -14,7 +14,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
 import { PalletData, ContainerGroup } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle, Moon, Sun } from 'lucide-react';
+import { PackageCheck, CircleAlert as AlertCircle, Moon, Sun } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function AppContent() {

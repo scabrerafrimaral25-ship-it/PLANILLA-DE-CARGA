@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2 } from 'lucide-react';
+import { CircleCheck as CheckCircle2 } from 'lucide-react';
 
 interface ProgressBarProps {
   current: number;
