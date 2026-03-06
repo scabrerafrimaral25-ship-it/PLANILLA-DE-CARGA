@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
 import { ContainerGroup, PalletData } from '../types';
 import { motion } from 'motion/react';
-import { Package, Truck, FileText, Download, Printer, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Truck, FileText, Download, Printer, ChevronDown, ChevronUp, Save, FolderOpen } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
 
 interface LoadingPlanProps {
   groups: ContainerGroup[];
   notFoundIds: string[];
   searchIds: string[];
+  onSavePlan?: (planName: string) => void;
+  onOpenPlans?: () => void;
 }
 
-export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, searchIds }) => {
+export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, searchIds, onSavePlan, onOpenPlans }) => {
   const [expandedContainers, setExpandedContainers] = useState<Set<string>>(
     new Set(groups.map(g => g.containerId))
   );
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [planName, setPlanName] = useState('');
 
   const toggleContainer = (containerId: string) => {
     setExpandedContainers(prev => {
@@ -210,6 +214,18 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
     window.print();
   };
 
+  const handleSaveClick = () => {
+    setShowSaveDialog(true);
+  };
+
+  const handleSaveConfirm = () => {
+    if (planName.trim() && onSavePlan) {
+      onSavePlan(planName);
+      setPlanName('');
+      setShowSaveDialog(false);
+    }
+  };
+
   if (groups.length === 0 && notFoundIds.length === 0) {
     return null;
   }
@@ -260,11 +276,29 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
       </div>
 
       <div className="flex items-center justify-between print:hidden">
-        <h2 className="text-2xl font-bold text-slate-900">Planilla de Carga Generada</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Planilla de Carga Generada</h2>
         <div className="flex gap-3">
+          {onOpenPlans && (
+            <button
+              onClick={onOpenPlans}
+              className="flex items-center px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors font-medium"
+            >
+              <FolderOpen className="w-4 h-4 mr-2" />
+              Abrir Planilla
+            </button>
+          )}
+          {onSavePlan && (
+            <button
+              onClick={handleSaveClick}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Guardar Planilla
+            </button>
+          )}
           <button
             onClick={handlePrint}
-            className="flex items-center px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+            className="flex items-center px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors font-medium"
           >
             <Printer className="w-4 h-4 mr-2" />
             Imprimir
@@ -278,6 +312,42 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
           </button>
         </div>
       </div>
+
+      {showSaveDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-xl max-w-sm mx-4"
+          >
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Guardar Planilla</h3>
+            <input
+              type="text"
+              placeholder="Nombre de la planilla"
+              value={planName}
+              onChange={(e) => setPlanName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveConfirm()}
+              autoFocus
+              className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg mb-4 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowSaveDialog(false)}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveConfirm}
+                disabled={!planName.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                Guardar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {notFoundIds.length > 0 && (
         <div className="bg-red-50 border border-red-100 rounded-xl p-6 print:border-red-200">

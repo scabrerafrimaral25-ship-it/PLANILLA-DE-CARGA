@@ -355,6 +355,8 @@ function AppContent() {
                   groups={groups}
                   notFoundIds={notFoundIds}
                   searchIds={searchIds}
+                  onSavePlan={handleSavePlan}
+                  onOpenPlans={() => setSavedPlansModalOpen(true)}
                 />
               </div>
             </motion.div>

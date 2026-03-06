@@ -55,21 +55,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       className="w-full max-w-6xl mx-auto mb-8"
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-700 dark:from-blue-600 dark:to-blue-900 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <Package className="w-8 h-8 opacity-80" />
-            <span className="text-sm font-medium opacity-80">Progreso</span>
-          </div>
-          <div className="text-4xl font-bold mb-1">{progressPercentage}%</div>
-          <div className="text-sm opacity-80">{scannedCount} de {masterDataLength} pallets</div>
-          <div className="w-full bg-white/20 rounded-full h-2 mt-3">
-            <div
-              className="bg-white rounded-full h-2 transition-all duration-500"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-        </div>
-
         <div className="bg-gradient-to-br from-green-500 to-green-700 dark:from-green-600 dark:to-green-900 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-2">
             <Package className="w-8 h-8 opacity-80" />
@@ -86,6 +71,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="text-4xl font-bold mb-1">{totalWeight.toLocaleString()}</div>
           <div className="text-sm opacity-80">Kilogramos</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-500 to-blue-700 dark:from-blue-600 dark:to-blue-900 rounded-2xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <Package className="w-8 h-8 opacity-80" />
+            <span className="text-sm font-medium opacity-80">Pallets</span>
+          </div>
+          <div className="text-4xl font-bold mb-1">{scannedCount}</div>
+          <div className="text-sm opacity-80">de {masterDataLength} seleccionados</div>
         </div>
       </div>
 
