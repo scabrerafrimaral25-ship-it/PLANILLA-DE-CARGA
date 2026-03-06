@@ -8,7 +8,6 @@ import { FileUpload } from './components/FileUpload';
 import { PalletSearch } from './components/PalletSearch';
 import { LoadingPlan } from './components/LoadingPlan';
 import { Dashboard } from './components/Dashboard';
-import { ProgressBar } from './components/ProgressBar';
 import { ToastProvider } from './components/ToastProvider';
 import { SavedPlansModal } from './components/SavedPlansModal';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
@@ -176,8 +175,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-sans selection:bg-green-100 selection:text-green-900 pb-20 transition-colors">
-
-      <ProgressBar current={searchIds.length} total={masterData.length} show={masterData.length > 0 && searchIds.length > 0} />
 
       {/* Header */}
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10 shadow-sm transition-colors">
