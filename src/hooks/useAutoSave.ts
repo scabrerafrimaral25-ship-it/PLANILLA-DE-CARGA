@@ -44,7 +44,7 @@ export const useAutoSave = (
           }
         }
       } catch (error) {
-        console.error('Error cargando desde Supabase:', error);
+        // Silently fall back to localStorage
       }
     }
 
@@ -79,7 +79,6 @@ export const useAutoSave = (
         searchIds: searches?.pallet_ids || [],
       };
     } catch (error) {
-      console.error('Error cargando desde Supabase:', error);
       return loadFromLocalStorage();
     }
   };
@@ -145,7 +144,7 @@ export const useAutoSave = (
           }
         }
       } catch (error) {
-        console.error('Error guardando en Supabase:', error);
+        // Silently continue with localStorage only
       }
     }
   };
@@ -162,7 +161,7 @@ export const useAutoSave = (
           .delete()
           .eq('id', sessionIdRef.current);
       } catch (error) {
-        console.error('Error limpiando Supabase:', error);
+        // Silently continue
       }
     }
 
