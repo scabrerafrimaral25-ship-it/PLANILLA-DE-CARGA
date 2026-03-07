@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { PalletData } from '../types';
 
 export interface LoadingPlan {
@@ -15,8 +15,13 @@ export async function savePlan(
   masterData: PalletData[],
   searchIds: string[] = []
 ): Promise<LoadingPlan | null> {
+  if (!isSupabaseConfigured()) {
+    console.error('Supabase not configured');
+    return null;
+  }
+
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('loading_plans')
       .insert({
         plan_name: planName,
@@ -43,8 +48,13 @@ export async function updatePlan(
   masterData: PalletData[],
   searchIds: string[] = []
 ): Promise<LoadingPlan | null> {
+  if (!isSupabaseConfigured()) {
+    console.error('Supabase not configured');
+    return null;
+  }
+
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('loading_plans')
       .update({
         master_data: masterData,
@@ -68,8 +78,13 @@ export async function updatePlan(
 }
 
 export async function getAllPlans(): Promise<LoadingPlan[]> {
+  if (!isSupabaseConfigured()) {
+    console.error('Supabase not configured');
+    return [];
+  }
+
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('loading_plans')
       .select('*')
       .order('updated_at', { ascending: false });
@@ -87,8 +102,13 @@ export async function getAllPlans(): Promise<LoadingPlan[]> {
 }
 
 export async function getPlanById(planId: string): Promise<LoadingPlan | null> {
+  if (!isSupabaseConfigured()) {
+    console.error('Supabase not configured');
+    return null;
+  }
+
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('loading_plans')
       .select('*')
       .eq('id', planId)
@@ -107,8 +127,13 @@ export async function getPlanById(planId: string): Promise<LoadingPlan | null> {
 }
 
 export async function deletePlan(planId: string): Promise<boolean> {
+  if (!isSupabaseConfigured()) {
+    console.error('Supabase not configured');
+    return false;
+  }
+
   try {
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('loading_plans')
       .delete()
       .eq('id', planId);

@@ -14,6 +14,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
 import { PalletData, ContainerGroup } from './types';
 import { savePlan } from './services/loadingPlansService';
+import { isSupabaseConfigured } from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { PackageCheck, CircleAlert as AlertCircle, Moon, Sun, FolderOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -104,11 +105,16 @@ function AppContent() {
   };
 
   const handleSavePlan = async (planName: string) => {
+    if (!isSupabaseConfigured()) {
+      toast.error('Supabase no está configurado. Configura tus credenciales en .env.local para guardar planillas en la nube.');
+      return;
+    }
+
     const saved = await savePlan(planName, masterData, searchIds);
     if (saved) {
       toast.success(`Planilla "${planName}" guardada`);
     } else {
-      toast.error('Error al guardar la planilla');
+      toast.error('Error al guardar la planilla. Verifica la consola para más detalles.');
     }
   };
 
@@ -188,7 +194,7 @@ function AppContent() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            {masterData.length > 0 && (
+            {masterData.length > 0 && isSupabaseConfigured() && (
               <button
                 onClick={() => setSavedPlansModalOpen(true)}
                 className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"

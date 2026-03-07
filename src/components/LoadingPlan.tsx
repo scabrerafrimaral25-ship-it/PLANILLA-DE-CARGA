@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ContainerGroup, PalletData } from '../types';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { motion } from 'motion/react';
 import { Package, Truck, FileText, Download, Printer, ChevronDown, ChevronUp, Save, FolderOpen } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
@@ -278,7 +279,7 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
       <div className="flex items-center justify-between print:hidden">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Planilla de Carga Generada</h2>
         <div className="flex gap-3">
-          {onOpenPlans && (
+          {onOpenPlans && isSupabaseConfigured() && (
             <button
               onClick={onOpenPlans}
               className="flex items-center px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors font-medium"
@@ -287,7 +288,7 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
               Abrir Planilla
             </button>
           )}
-          {onSavePlan && (
+          {onSavePlan && isSupabaseConfigured() && (
             <button
               onClick={handleSaveClick}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
