@@ -1,10 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Search, X, Plus, FileText, Upload, Trash2, CircleAlert as AlertCircle, Camera } from 'lucide-react';
+import { Search, X, Plus, FileText, Upload, Trash2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
 import { parsePdfFile } from '../utils/pdf';
-import { BarcodeScanner } from './BarcodeScanner';
-import toast from 'react-hot-toast';
 
 interface PalletSearchProps {
   onSearch: (palletIds: string[]) => void;
@@ -17,7 +15,6 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [missingAlert, setMissingAlert] = useState<string[] | null>(null);
-  const [showScanner, setShowScanner] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = () => {
@@ -76,24 +73,16 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
         // Merge with existing, remove duplicates
         const uniqueIds = Array.from(new Set([...currentIds, ...newIds]));
         onSearch(uniqueIds);
-        toast.success(`Se importaron ${newIds.length} pallets correctamente`);
+        alert(`Se importaron ${newIds.length} pallets.`);
       } else {
-        toast.error('No se encontraron números de pallet válidos (6-7 dígitos) en el archivo.');
+        alert('No se encontraron números de pallet válidos (6-7 dígitos) en el archivo.');
       }
     } catch (error) {
       console.error(error);
-      toast.error('Error al procesar el archivo.');
+      alert('Error al procesar el archivo.');
     } finally {
       setIsProcessing(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const handleScan = (code: string) => {
-    const cleanCode = code.trim();
-    if (cleanCode && !currentIds.includes(cleanCode)) {
-      const newIds = [...currentIds, cleanCode];
-      onSearch(newIds);
     }
   };
 
@@ -138,7 +127,7 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
           </div>
 
           <div className="pt-4 border-t border-slate-100">
-            <p className="text-sm text-slate-500 mb-3">O importa pallets de otras formas:</p>
+            <p className="text-sm text-slate-500 mb-3">O importa una lista desde archivo:</p>
             <div className="flex gap-3">
               <input
                 type="file"
@@ -160,13 +149,6 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
                     Subir Excel / PDF
                   </>
                 )}
-              </button>
-              <button
-                onClick={() => setShowScanner(true)}
-                className="flex-1 flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-              >
-                <Camera className="w-4 h-4 mr-2" />
-                Escanear Código
               </button>
             </div>
             <p className="text-xs text-slate-400 mt-2">
@@ -240,12 +222,6 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
           </div>
         </div>
       </div>
-
-      <BarcodeScanner
-        isOpen={showScanner}
-        onClose={() => setShowScanner(false)}
-        onScan={handleScan}
-      />
 
       {/* Missing Pallets Modal */}
       <AnimatePresence>

@@ -3,68 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { PalletSearch } from './components/PalletSearch';
 import { LoadingPlan } from './components/LoadingPlan';
-import { Dashboard } from './components/Dashboard';
-import { ToastProvider } from './components/ToastProvider';
-import { SavedPlansModal } from './components/SavedPlansModal';
-import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
 import { PalletData, ContainerGroup } from './types';
-import { savePlan } from './services/loadingPlansService';
-import { isSupabaseConfigured } from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, CircleAlert as AlertCircle, Moon, Sun, FolderOpen } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { PackageCheck, AlertCircle } from 'lucide-react';
 
-function AppContent() {
-  const { theme, toggleTheme } = useTheme();
+export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
   const [searchIds, setSearchIds] = useState<string[]>([]);
-  const [savedPlansModalOpen, setSavedPlansModalOpen] = useState(false);
-
-  useEffect(() => {
-    const storedData = localStorage.getItem('pallet_master_data');
-    const storedSearch = localStorage.getItem('pallet_search_ids');
-
-    if (storedData) {
-      try {
-        const data = JSON.parse(storedData);
-        if (data.length > 0) {
-          setMasterData(data);
-          toast.success('Datos restaurados desde la última sesión');
-        }
-      } catch (e) {
-        console.error('Error restaurando datos:', e);
-      }
-    }
-
-    if (storedSearch) {
-      try {
-        const search = JSON.parse(storedSearch);
-        if (search.length > 0) {
-          setSearchIds(search);
-        }
-      } catch (e) {
-        console.error('Error restaurando búsqueda:', e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (masterData.length > 0) {
-      localStorage.setItem('pallet_master_data', JSON.stringify(masterData));
-    }
-  }, [masterData]);
-
-  useEffect(() => {
-    localStorage.setItem('pallet_search_ids', JSON.stringify(searchIds));
-  }, [searchIds]);
 
   const handleFileUpload = async (file: File) => {
     setLoading(true);
@@ -97,25 +50,6 @@ function AppContent() {
 
   const handleClearSearch = () => {
     setSearchIds([]);
-  };
-
-  const handleLoadPlan = (data: PalletData[], ids: string[]) => {
-    setMasterData(data);
-    setSearchIds(ids);
-  };
-
-  const handleSavePlan = async (planName: string) => {
-    if (!isSupabaseConfigured()) {
-      toast.error('Supabase no está configurado. Configura tus credenciales en .env.local para guardar planillas en la nube.');
-      return;
-    }
-
-    const saved = await savePlan(planName, masterData, searchIds);
-    if (saved) {
-      toast.success(`Planilla "${planName}" guardada`);
-    } else {
-      toast.error('Error al guardar la planilla. Verifica la consola para más detalles.');
-    }
   };
 
   const { groups, notFoundIds } = useMemo(() => {
@@ -163,60 +97,24 @@ function AppContent() {
     };
   }, [masterData, searchIds]);
 
-  const grandTotals = useMemo(() => {
-    return groups.reduce(
-      (acc, group) => {
-        group.pallets.forEach((pallet) => {
-          if (searchIds.includes(pallet.palletId)) {
-            acc.pallets += 1;
-            acc.boxes += pallet.boxes;
-            acc.weight += pallet.weight;
-          }
-        });
-        return acc;
-      },
-      { pallets: 0, boxes: 0, weight: 0 }
-    );
-  }, [groups, searchIds]);
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-sans selection:bg-green-100 selection:text-green-900 pb-20 transition-colors">
-
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-20">
+      
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10 shadow-sm transition-colors">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-green-600 p-2 rounded-lg">
+            <div className="bg-indigo-600 p-2 rounded-lg">
               <PackageCheck className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
               Gestor de Carga
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            {masterData.length > 0 && isSupabaseConfigured() && (
-              <button
-                onClick={() => setSavedPlansModalOpen(true)}
-                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                <FolderOpen className="w-5 h-5" />
-                <span className="hidden sm:inline">Mis Planillas</span>
-              </button>
-            )}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-              aria-label="Toggle dark mode"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <Moon className="w-5 h-5 text-slate-600" />
-              )}
-            </button>
             {masterData.length > 0 && (
               <>
-                <div className="text-sm text-slate-500 dark:text-slate-400 font-medium bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full hidden sm:block">
+                <div className="text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full hidden sm:block">
                   {masterData.length} Pallets Cargados
                 </div>
                 <button
@@ -224,12 +122,9 @@ function AppContent() {
                     if (window.confirm('¿Estás seguro de que quieres cargar un nuevo archivo? Se perderá la búsqueda actual.')) {
                       setMasterData([]);
                       setSearchIds([]);
-                      localStorage.removeItem('pallet_master_data');
-                      localStorage.removeItem('pallet_search_ids');
-                      toast.success('Datos borrados correctamente');
                     }
                   }}
-                  className="text-sm text-green-600 dark:text-green-400 font-medium hover:text-green-800 dark:hover:text-green-300 transition-colors"
+                  className="text-sm text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
                 >
                   Cambiar Archivo
                 </button>
@@ -251,19 +146,19 @@ function AppContent() {
               className="flex flex-col items-center justify-center min-h-[60vh]"
             >
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">
                   Comencemos a organizar tu carga
                 </h2>
-                <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-8">
+                <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
                   Sube tu planilla maestra de Excel para comenzar a buscar y agrupar pallets por contenedor automáticamente.
                 </p>
-
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 max-w-lg mx-auto text-left shadow-sm">
-                  <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-2 text-green-600" />
+                
+                <div className="bg-white p-6 rounded-xl border border-slate-200 max-w-lg mx-auto text-left shadow-sm">
+                  <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-2 text-indigo-600" />
                     Formato esperado (basado en tu nueva captura):
                   </h3>
-                  <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
+                  <ul className="text-sm text-slate-600 space-y-2 list-disc list-inside">
                     <li>Columna C: Contenedor (ej: FMLU 854344-)</li>
                     <li>Columna D: Pallets/Cantidad</li>
                     <li>Columna E: Cajas</li>
@@ -337,32 +232,19 @@ function AppContent() {
               className="space-y-8"
             >
               <div className="flex justify-center">
-                <PalletSearch
-                  onSearch={handleSearch}
-                  onClear={handleClearSearch}
+                <PalletSearch 
+                  onSearch={handleSearch} 
+                  onClear={handleClearSearch} 
                   currentIds={searchIds}
                   validIds={masterData.map(p => p.palletId)}
                 />
               </div>
 
-              {groups.length > 0 && (
-                <Dashboard
-                  groups={groups}
-                  searchIds={searchIds}
-                  totalPallets={grandTotals.pallets}
-                  totalBoxes={grandTotals.boxes}
-                  totalWeight={grandTotals.weight}
-                  masterDataLength={masterData.length}
-                />
-              )}
-
               <div id="results-section">
-                <LoadingPlan
-                  groups={groups}
-                  notFoundIds={notFoundIds}
+                <LoadingPlan 
+                  groups={groups} 
+                  notFoundIds={notFoundIds} 
                   searchIds={searchIds}
-                  onSavePlan={handleSavePlan}
-                  onOpenPlans={() => setSavedPlansModalOpen(true)}
                 />
               </div>
             </motion.div>
@@ -371,29 +253,11 @@ function AppContent() {
 
       </main>
 
-      <footer className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-8 mt-auto transition-colors print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+      <footer className="bg-white border-t border-slate-200 py-8 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-500 text-sm">
           <p>&copy; {new Date().getFullYear()} Gestor de Carga de Pallets. Todos los derechos reservados.</p>
         </div>
       </footer>
-
-      <SavedPlansModal
-        isOpen={savedPlansModalOpen}
-        onClose={() => setSavedPlansModalOpen(false)}
-        onLoadPlan={handleLoadPlan}
-        onSavePlan={handleSavePlan}
-        masterData={masterData}
-        searchIds={searchIds}
-      />
     </div>
-  );
-}
-
-export default function App() {
-  return (
-    <ThemeProvider>
-      <ToastProvider />
-      <AppContent />
-    </ThemeProvider>
   );
 }
