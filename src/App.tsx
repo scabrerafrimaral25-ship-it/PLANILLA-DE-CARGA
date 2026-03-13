@@ -8,16 +8,18 @@ import { FileUpload } from './components/FileUpload';
 import { PalletSearch } from './components/PalletSearch';
 import { LoadingPlan } from './components/LoadingPlan';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
-import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client, StockItem } from './types';
+import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client, StockItem, Order } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard } from 'lucide-react';
+import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList } from 'lucide-react';
 import { ClientManager } from './components/ClientManager';
 import { StockManager } from './components/StockManager';
+import { OrderManager } from './components/OrderManager';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
   const [stockData, setStockData] = useState<StockItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'carga' | 'stock'>('carga');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos'>('carga');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
@@ -49,6 +51,15 @@ export default function App() {
         setStockData(JSON.parse(storedStock));
       } catch (e) {
         console.error('Error loading stock', e);
+      }
+    }
+
+    const storedOrders = localStorage.getItem('app_orders');
+    if (storedOrders) {
+      try {
+        setOrders(JSON.parse(storedOrders));
+      } catch (e) {
+        console.error('Error loading orders', e);
       }
     }
 
@@ -94,6 +105,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('app_stock', JSON.stringify(stockData));
   }, [stockData]);
+
+  // Save orders to localStorage
+  useEffect(() => {
+    localStorage.setItem('app_orders', JSON.stringify(orders));
+  }, [orders]);
 
   // Save clients to localStorage
   useEffect(() => {
@@ -287,6 +303,17 @@ export default function App() {
                 <Database className="w-4 h-4" />
                 Stock
               </button>
+              <button
+                onClick={() => setActiveTab('pedidos')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === 'pedidos' 
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <ClipboardList className="w-4 h-4" />
+                Pedidos
+              </button>
             </nav>
             
             {(appSettings.logo || selectedClient) && (
@@ -382,6 +409,20 @@ export default function App() {
                 stock={stockData} 
                 clients={clients} 
                 onUpdateStock={(newStock) => setStockData(newStock)} 
+              />
+            </motion.div>
+          ) : activeTab === 'pedidos' ? (
+            <motion.div
+              key="orders-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <OrderManager 
+                orders={orders}
+                clients={clients}
+                stock={stockData}
+                onUpdateOrders={(newOrders) => setOrders(newOrders)}
               />
             </motion.div>
           ) : masterData.length === 0 ? (

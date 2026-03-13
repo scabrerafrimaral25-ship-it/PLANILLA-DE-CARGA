@@ -39,6 +39,24 @@ export interface StockItem {
   timestamp: number;
 }
 
+export type OrderStatus = 'pendiente' | 'en_preparacion' | 'cargado' | 'despachado';
+
+export interface OrderItem {
+  id: string;
+  product: string;
+  kilos: number;
+  boxes: number;
+}
+
+export interface Order {
+  id: string;
+  clientId: string;
+  date: string;
+  items: OrderItem[];
+  status: OrderStatus;
+  observations?: string;
+}
+
 export interface SavedPlan {
   id: string;
   name: string;
