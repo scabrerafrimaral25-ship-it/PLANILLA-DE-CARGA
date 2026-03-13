@@ -36,13 +36,30 @@ export const parseExcelFile = (file: File): Promise<any[]> => {
   });
 };
 
+const COLUMN_DICTIONARY = {
+  client: ["cliente", "customer", "client", "empresa"],
+  product: ["producto", "product", "item", "descripcion", "mercader"],
+  lot: ["lote", "lot", "batch"],
+  container: ["contenedor", "container", "cont", "equipo"],
+  pallet: ["pallet", "palet", "plt", "id", "bulto"],
+  boxes: ["cajas", "boxes", "cartons", "bultos", "unid"],
+  weight: ["kilos", "kg", "peso", "weight", "neto"],
+  status: ["estado", "status", "state"]
+};
+
+function detectColumn(headers: string[], possibilities: string[]): number {
+  return headers.findIndex(header => {
+    const h = header.toLowerCase().trim();
+    return possibilities.some(p => h.includes(p));
+  });
+}
+
 export const mapDataToStock = (data: any[], existingClients: Client[]): { stock: StockItem[], newClients: Client[] } => {
   // Normalize data: if a row is a single string with semicolons, split it
   const normalizedData = data.map(row => {
     if (Array.isArray(row) && row.length === 1 && typeof row[0] === 'string' && row[0].includes(';')) {
       return row[0].split(';');
     }
-    // Also handle cases where cells might have trailing semicolons
     if (Array.isArray(row)) {
       return row.map(cell => typeof cell === 'string' ? cell.replace(/;$/, '').trim() : cell);
     }
@@ -53,7 +70,7 @@ export const mapDataToStock = (data: any[], existingClients: Client[]): { stock:
   const newClients: Client[] = [];
   const allClients = [...existingClients];
   
-  // Smart Detection of Columns for Stock
+  // Find the header row and map columns
   let headerRowIndex = -1;
   let colMap = {
     client: -1,
@@ -66,42 +83,32 @@ export const mapDataToStock = (data: any[], existingClients: Client[]): { stock:
     status: -1
   };
 
-  // 1. Find the header row
   for (let i = 0; i < Math.min(normalizedData.length, 50); i++) {
     const row = normalizedData[i];
     if (!Array.isArray(row)) continue;
     
-    const rowStr = Array.from(row).map(cell => String(cell || '').toLowerCase().replace(/;/g, '').trim());
+    const headers = row.map(cell => String(cell || '').toLowerCase().trim());
     
-    const clientIdx = rowStr.findIndex(s => s.includes('cliente') || s.includes('client'));
-    const containerIdx = rowStr.findIndex(s => s.includes('contenedor') || s.includes('container') || s.includes('equipo'));
+    const clientIdx = detectColumn(headers, COLUMN_DICTIONARY.client);
+    const containerIdx = detectColumn(headers, COLUMN_DICTIONARY.container);
     
     if (clientIdx !== -1 && containerIdx !== -1) {
       headerRowIndex = i;
       colMap.client = clientIdx;
       colMap.container = containerIdx;
-      colMap.pallet = rowStr.findIndex(s => s.includes('pallet') || s.includes('id') || s.includes('bulto'));
-      colMap.product = rowStr.findIndex(s => s.includes('producto') || s.includes('product') || s.includes('descrip') || s.includes('contenido') || s.includes('mercader'));
-      colMap.lot = rowStr.findIndex(s => s.includes('lote') || s.includes('lot'));
-      colMap.boxes = rowStr.findIndex(s => s.includes('cajas') || s.includes('boxes') || s.includes('bultos') || s.includes('unid'));
-      colMap.weight = rowStr.findIndex(s => s.includes('kilos') || s.includes('weight') || s.includes('peso') || s.includes('kg') || s.includes('neto'));
-      colMap.status = rowStr.findIndex(s => s.includes('estado') || s.includes('status') || s.includes('state'));
+      colMap.pallet = detectColumn(headers, COLUMN_DICTIONARY.pallet);
+      colMap.product = detectColumn(headers, COLUMN_DICTIONARY.product);
+      colMap.lot = detectColumn(headers, COLUMN_DICTIONARY.lot);
+      colMap.boxes = detectColumn(headers, COLUMN_DICTIONARY.boxes);
+      colMap.weight = detectColumn(headers, COLUMN_DICTIONARY.weight);
+      colMap.status = detectColumn(headers, COLUMN_DICTIONARY.status);
       break;
     }
   }
 
   // Fallback indices if detection fails
   if (headerRowIndex === -1) {
-    colMap = {
-      client: 0,
-      container: 1,
-      pallet: 2,
-      product: 3,
-      lot: 4,
-      boxes: 5,
-      weight: 6,
-      status: 7
-    };
+    colMap = { client: 0, container: 1, pallet: 2, product: 3, lot: 4, boxes: 5, weight: 6, status: 7 };
     headerRowIndex = 0;
   }
 
@@ -123,29 +130,27 @@ export const mapDataToStock = (data: any[], existingClients: Client[]): { stock:
     return 0;
   };
 
-  const startRow = headerRowIndex === -1 ? 0 : headerRowIndex + 1;
+  const startRow = headerRowIndex + 1;
 
   for (let i = startRow; i < normalizedData.length; i++) {
     const row = normalizedData[i];
     if (!Array.isArray(row)) continue;
 
-    const clientName = String(row[colMap.client] || '').replace(/;/g, '').trim();
-    const containerId = String(row[colMap.container] || '').replace(/;/g, '').trim();
-    const palletId = String(row[colMap.pallet] || '').replace(/;/g, '').trim();
+    const clientName = String(row[colMap.client] || '').trim();
+    const containerId = String(row[colMap.container] || '').trim();
+    const palletId = String(row[colMap.pallet] || '').trim();
 
     if (!clientName || !containerId || !palletId) continue;
 
-    // Robust matching: trim and case-insensitive
     let client = allClients.find(c => c.name.trim().toLowerCase() === clientName.toLowerCase());
     
     if (!client) {
-      // Create new client if not exists
       const newClient: Client = {
         id: crypto.randomUUID(),
         name: clientName,
         country: '',
         operationType: 'Importación',
-        observations: 'Creado automáticamente durante importación de stock'
+        observations: 'Creado automáticamente durante importación de stock inteligente'
       };
       newClients.push(newClient);
       allClients.push(newClient);
