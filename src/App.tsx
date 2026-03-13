@@ -8,9 +8,10 @@ import { FileUpload } from './components/FileUpload';
 import { PalletSearch } from './components/PalletSearch';
 import { LoadingPlan } from './components/LoadingPlan';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
-import { PalletData, ContainerGroup, SavedPlan, AppSettings } from './types';
+import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon } from 'lucide-react';
+import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus } from 'lucide-react';
+import { ClientManager } from './components/ClientManager';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
@@ -20,6 +21,9 @@ export default function App() {
   const [searchIds, setSearchIds] = useState<string[]>([]);
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [showSavedPlans, setShowSavedPlans] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [showClientManager, setShowClientManager] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings>({
     logo: null,
     darkMode: false,
@@ -33,6 +37,15 @@ export default function App() {
         setSavedPlans(JSON.parse(storedPlans));
       } catch (e) {
         console.error('Error loading saved plans', e);
+      }
+    }
+
+    const storedClients = localStorage.getItem('app_clients');
+    if (storedClients) {
+      try {
+        setClients(JSON.parse(storedClients));
+      } catch (e) {
+        console.error('Error loading clients', e);
       }
     }
 
@@ -65,7 +78,31 @@ export default function App() {
     localStorage.setItem('saved_plans', JSON.stringify(savedPlans));
   }, [savedPlans]);
 
+  // Save clients to localStorage
+  useEffect(() => {
+    localStorage.setItem('app_clients', JSON.stringify(clients));
+  }, [clients]);
+
+  const handleAddClient = (client: Client) => {
+    setClients(prev => [...prev, client]);
+  };
+
+  const handleDeleteClient = (id: string) => {
+    if (window.confirm('¿Eliminar este cliente? Las planillas asociadas no se borrarán pero perderán la referencia.')) {
+      setClients(prev => prev.filter(c => c.id !== id));
+      if (selectedClientId === id) setSelectedClientId(null);
+    }
+  };
+
+  const selectedClient = useMemo(() => 
+    clients.find(c => c.id === selectedClientId), 
+  [clients, selectedClientId]);
+
   const handleFileUpload = async (file: File) => {
+    if (!selectedClientId) {
+      alert('Por favor, selecciona un cliente primero.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setDebugData(null);
@@ -101,7 +138,7 @@ export default function App() {
   const handleSavePlan = () => {
     if (masterData.length === 0) return;
     
-    const name = window.prompt('Nombre para esta planilla:', `Carga ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`);
+    const name = window.prompt('Nombre para esta planilla:', `${selectedClient?.name || 'Carga'} - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`);
     if (!name) return;
 
     const newPlan: SavedPlan = {
@@ -110,6 +147,7 @@ export default function App() {
       timestamp: Date.now(),
       masterData,
       searchIds,
+      clientId: selectedClientId || undefined,
     };
 
     setSavedPlans(prev => [newPlan, ...prev]);
@@ -119,6 +157,7 @@ export default function App() {
   const handleLoadPlan = (plan: SavedPlan) => {
     setMasterData(plan.masterData);
     setSearchIds(plan.searchIds);
+    if (plan.clientId) setSelectedClientId(plan.clientId);
     setShowSavedPlans(false);
   };
 
@@ -205,16 +244,31 @@ export default function App() {
               </h1>
             </div>
             
-            {appSettings.logo && (
+            {(appSettings.logo || selectedClient) && (
               <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
             )}
             
             {appSettings.logo && (
               <img src={appSettings.logo} alt="Logo" className="h-10 max-w-[120px] object-contain" />
             )}
+
+            {selectedClient && (
+              <div className="hidden md:flex flex-col">
+                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Cliente</span>
+                <span className="text-sm font-semibold truncate max-w-[150px]">{selectedClient.name}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => setShowClientManager(true)}
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
+              title="Gestionar Clientes"
+            >
+              <Users className="w-5 h-5" />
+            </button>
+
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
@@ -256,6 +310,7 @@ export default function App() {
                     if (window.confirm('¿Estás seguro de que quieres cargar un nuevo archivo? Se perderá la búsqueda actual.')) {
                       setMasterData([]);
                       setSearchIds([]);
+                      setSelectedClientId(null);
                     }
                   }}
                   className="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
@@ -281,26 +336,66 @@ export default function App() {
             >
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-                  Comencemos a organizar tu carga
+                  Gestión Multi-Cliente
                 </h2>
                 <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-8">
-                  Sube tu planilla maestra de Excel o carga una planilla guardada anteriormente para comenzar.
+                  Selecciona un cliente para comenzar a organizar su carga frigorífica.
                 </p>
-                
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 max-w-lg mx-auto text-left shadow-sm">
-                  <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-2 text-indigo-600" />
-                    Formato esperado:
-                  </h3>
-                  <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
-                    <li>Columna C: Contenedor</li>
-                    <li>Columna D: Pallets/Cantidad</li>
-                    <li>Columna E: Bultos</li>
-                    <li>Columna F: Kilos</li>
-                    <li>Columna G: Contenido</li>
-                    <li>Columna H: Pallet ID (6-7 dígitos)</li>
-                  </ul>
+
+                {/* Client Selection Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto mb-12">
+                  {clients.map(client => (
+                    <button
+                      key={client.id}
+                      onClick={() => setSelectedClientId(client.id)}
+                      className={`p-6 rounded-2xl border-2 text-left transition-all ${
+                        selectedClientId === client.id 
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 ring-4 ring-indigo-100 dark:ring-indigo-900/30' 
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-700'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-slate-900 dark:text-white">{client.name}</h4>
+                        {selectedClientId === client.id && <div className="w-2 h-2 bg-indigo-600 rounded-full" />}
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-1">
+                        <Globe className="w-3 h-3" /> {client.country || 'Sin país'}
+                      </p>
+                      <div className="flex items-center text-indigo-600 dark:text-indigo-400 text-sm font-bold">
+                        Seleccionar <ChevronRight className="w-4 h-4 ml-1" />
+                      </div>
+                    </button>
+                  ))}
+                  
+                  <button
+                    onClick={() => setShowClientManager(true)}
+                    className="p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-indigo-600"
+                  >
+                    <Plus className="w-8 h-8" />
+                    <span className="font-bold">Nuevo Cliente</span>
+                  </button>
                 </div>
+                
+                {selectedClientId && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 max-w-lg mx-auto text-left shadow-sm mb-8"
+                  >
+                    <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-2 text-indigo-600" />
+                      Formato de Excel para {selectedClient?.name}:
+                    </h3>
+                    <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
+                      <li>Columna C: Contenedor</li>
+                      <li>Columna D: Pallets/Cantidad</li>
+                      <li>Columna E: Bultos</li>
+                      <li>Columna F: Kilos</li>
+                      <li>Columna G: Contenido</li>
+                      <li>Columna H: Pallet ID (6-7 dígitos)</li>
+                    </ul>
+                  </motion.div>
+                )}
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -392,6 +487,7 @@ export default function App() {
                   notFoundIds={notFoundIds} 
                   searchIds={searchIds}
                   logo={appSettings.logo}
+                  client={selectedClient}
                 />
               </div>
             </motion.div>
@@ -399,6 +495,18 @@ export default function App() {
         </AnimatePresence>
 
       </main>
+
+      {/* Client Manager Modal */}
+      <AnimatePresence>
+        {showClientManager && (
+          <ClientManager
+            clients={clients}
+            onAddClient={handleAddClient}
+            onDeleteClient={handleDeleteClient}
+            onClose={() => setShowClientManager(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Saved Plans Sidebar/Modal */}
       <AnimatePresence>
@@ -437,34 +545,42 @@ export default function App() {
                     <p className="text-slate-500">No tienes planillas guardadas aún.</p>
                   </div>
                 ) : (
-                  savedPlans.map(plan => (
-                    <div
-                      key={plan.id}
-                      className="group bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer"
-                      onClick={() => handleLoadPlan(plan)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                          {plan.name}
-                        </h4>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeletePlan(plan.id);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                  savedPlans.map(plan => {
+                    const planClient = clients.find(c => c.id === plan.clientId);
+                    return (
+                      <div
+                        key={plan.id}
+                        className="group bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer"
+                        onClick={() => handleLoadPlan(plan)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                              {plan.name}
+                            </h4>
+                            {planClient && (
+                              <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{planClient.name}</span>
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePlan(plan.id);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-2">
+                          <span>{new Date(plan.timestamp).toLocaleString()}</span>
+                          <span className="bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">
+                            {plan.masterData.length} pallets
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                        <span>{new Date(plan.timestamp).toLocaleString()}</span>
-                        <span className="bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">
-                          {plan.masterData.length} pallets
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </motion.div>

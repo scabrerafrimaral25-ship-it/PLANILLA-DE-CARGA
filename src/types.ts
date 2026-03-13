@@ -16,12 +16,21 @@ export interface ContainerGroup {
   totalWeight: number;
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  country: string;
+  operationType: string;
+  observations: string;
+}
+
 export interface SavedPlan {
   id: string;
   name: string;
   timestamp: number;
   masterData: PalletData[];
   searchIds: string[];
+  clientId?: string;
 }
 
 export interface AppSettings {

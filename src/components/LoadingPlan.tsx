@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ContainerGroup, PalletData } from '../types';
+import { ContainerGroup, PalletData, Client } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package, Truck, FileText, Download, Printer, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { Package, Truck, FileText, Download, Printer, ChevronDown, ChevronUp, CheckCircle2, Globe, Briefcase } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
 
 interface LoadingPlanProps {
@@ -9,9 +9,10 @@ interface LoadingPlanProps {
   notFoundIds: string[];
   searchIds: string[];
   logo?: string | null;
+  client?: Client | null;
 }
 
-export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, searchIds, logo }) => {
+export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, searchIds, logo, client }) => {
   const [expandedContainers, setExpandedContainers] = useState<Record<string, boolean>>(
     groups.reduce((acc, g) => ({ ...acc, [g.containerId]: true }), {})
   );
@@ -61,14 +62,18 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
     const exportData: any[] = [];
     const rowStyles: { [rowIndex: number]: { fill?: { fgColor: { rgb: string } } } } = {};
     
-    // Title
+    // Title & Client Info
     exportData.push(['PLANILLA DE CARGA']);
+    if (client) {
+      exportData.push([`CLIENTE: ${client.name}`]);
+      exportData.push([`PAÍS: ${client.country} | OPERACIÓN: ${client.operationType}`]);
+    }
     exportData.push([]); // Empty row
 
     // Headers
     exportData.push(['Contenedor', 'Cant.', 'Bultos', 'Peso', 'Descripción', '', 'Pallet ID']);
     
-    let currentRow = 3; // 0-indexed, starting after headers (row 4 in Excel)
+    let currentRow = client ? 5 : 3; // Adjust based on client info rows
 
     groups.forEach(group => {
       group.pallets.forEach(pallet => {
@@ -150,6 +155,8 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
     // Apply styles to cells
     const range = XLSX.utils.decode_range(ws['!ref'] || "A1:A1");
     
+    const headerRowIndex = client ? 4 : 2;
+
     for (let R = range.s.r; R <= range.e.r; ++R) {
       for (let C = range.s.c; C <= range.e.c; ++C) {
         const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
@@ -168,8 +175,15 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
             alignment: { horizontal: "center" }
           };
         }
-        // Header style (Row 2)
-        else if (R === 2) {
+        // Client Info style
+        else if (client && (R === 1 || R === 2)) {
+          cellStyle = {
+            font: { bold: true, sz: 11 },
+            alignment: { horizontal: "left" }
+          };
+        }
+        // Header style
+        else if (R === headerRowIndex) {
           cellStyle = headerStyle;
         }
         // Data rows
@@ -203,7 +217,7 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Plan de Carga");
-    XLSX.writeFile(wb, "plan_de_carga.xlsx");
+    XLSX.writeFile(wb, `Planilla_${client?.name || 'Carga'}.xlsx`);
   };
 
   const handlePrint = () => {
@@ -249,13 +263,24 @@ export const LoadingPlan: React.FC<LoadingPlanProps> = ({ groups, notFoundIds, s
         <div className="flex flex-col md:flex-row gap-8">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold opacity-90 flex items-center">
-                <FileText className="w-5 h-5 mr-2" />
-                Resumen de Orden de Embarque (Solo Buscados)
-              </h3>
-              {logo && <img src={logo} alt="Logo" className="h-12 max-w-[150px] object-contain hidden print:block" />}
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold opacity-90 flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Resumen de Orden de Embarque
+                </h3>
+                {client && (
+                  <div className="mt-2 flex flex-col">
+                    <span className="text-2xl font-bold text-white print:text-black">{client.name}</span>
+                    <div className="flex gap-4 mt-1 text-indigo-200 print:text-slate-500 text-sm font-medium">
+                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> {client.country}</span>
+                      <span className="flex items-center gap-1"><Briefcase className="w-3 h-3" /> {client.operationType}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {logo && <img src={logo} alt="Logo" className="h-16 max-w-[180px] object-contain hidden print:block" />}
             </div>
-            <div className="grid grid-cols-3 gap-8">
+            <div className="grid grid-cols-3 gap-8 mt-6">
               <div>
                 <div className="text-indigo-200 text-sm font-medium uppercase tracking-wider print:text-slate-500">Total Pallets</div>
                 <div className="text-4xl font-bold mt-1">{grandTotals.pallets}</div>
