@@ -58,10 +58,10 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ready': return 'bg-red-500 border-red-600 shadow-red-200';
-      case 'reserved': return 'bg-amber-500 border-amber-600 shadow-amber-200';
-      case 'available': return 'bg-emerald-500 border-emerald-600 shadow-emerald-200';
-      case 'empty': return 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700';
+      case 'ready': return 'bg-[#ff7b00] border-[#e66e00] shadow-orange-200'; // Ocupado / Listo
+      case 'reserved': return 'bg-[#ffe600] border-[#e6cf00] shadow-yellow-200 text-slate-900'; // Reservado
+      case 'available': return 'bg-[#ff7b00] border-[#e66e00] shadow-orange-200'; // Ocupado con stock
+      case 'empty': return 'bg-[#00a651] border-[#008c44] shadow-emerald-200'; // Libre
       default: return 'bg-slate-200';
     }
   };
@@ -106,20 +106,16 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
       {/* Legend */}
       <div className="flex flex-wrap gap-6 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-emerald-500" />
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Disponible (Stock)</span>
+          <div className="w-4 h-4 rounded bg-[#00a651]" />
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Libre (Disponible)</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-amber-500" />
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Reservado (En Prep.)</span>
+          <div className="w-4 h-4 rounded bg-[#ffe600]" />
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Reservado (En Preparación)</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-red-500" />
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Listo para Despacho</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Posición Vacía</span>
+          <div className="w-4 h-4 rounded bg-[#ff7b00]" />
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Ocupado (Con Contenedor)</span>
         </div>
       </div>
 
@@ -169,15 +165,15 @@ export const WarehouseMap: React.FC<WarehouseMapProps> = ({
                   >
                     {container ? (
                       <>
-                        <span className="text-[10px] font-black text-white leading-tight truncate w-full text-center">
+                        <span className={`text-[10px] font-black leading-tight truncate w-full text-center ${status === 'reserved' ? 'text-slate-900' : 'text-white'}`}>
                           {container.id}
                         </span>
-                        <span className="text-[8px] font-bold text-white/80 truncate w-full text-center">
+                        <span className={`text-[8px] font-bold truncate w-full text-center ${status === 'reserved' ? 'text-slate-700' : 'text-white/80'}`}>
                           {client?.name || '...'}
                         </span>
                       </>
                     ) : (
-                      <span className="text-[10px] font-bold text-slate-300 dark:text-slate-700">{posId}</span>
+                      <span className="text-[10px] font-bold text-white/90">{posId}</span>
                     )}
                   </motion.button>
                 );
