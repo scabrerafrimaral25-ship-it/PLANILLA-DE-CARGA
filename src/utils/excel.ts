@@ -59,19 +59,19 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
     
     const rowStr = Array.from(row).map(cell => String(cell || '').toLowerCase());
     
-    const clientIdx = rowStr.findIndex(s => s.includes('cliente'));
-    const containerIdx = rowStr.findIndex(s => s.includes('contenedor'));
+    const clientIdx = rowStr.findIndex(s => s.includes('cliente') || s.includes('client'));
+    const containerIdx = rowStr.findIndex(s => s.includes('contenedor') || s.includes('container') || s.includes('equipo'));
     
     if (clientIdx !== -1 && containerIdx !== -1) {
       headerRowIndex = i;
       colMap.client = clientIdx;
       colMap.container = containerIdx;
-      colMap.pallet = rowStr.findIndex(s => s.includes('pallet') || s.includes('id'));
-      colMap.product = rowStr.findIndex(s => s.includes('producto') || s.includes('descrip') || s.includes('contenido'));
-      colMap.lot = rowStr.findIndex(s => s.includes('lote'));
-      colMap.boxes = rowStr.findIndex(s => s.includes('cajas') || s.includes('bultos'));
-      colMap.weight = rowStr.findIndex(s => s.includes('kilos') || s.includes('peso') || s.includes('kg'));
-      colMap.status = rowStr.findIndex(s => s.includes('estado'));
+      colMap.pallet = rowStr.findIndex(s => s.includes('pallet') || s.includes('id') || s.includes('bulto'));
+      colMap.product = rowStr.findIndex(s => s.includes('producto') || s.includes('product') || s.includes('descrip') || s.includes('contenido') || s.includes('mercader'));
+      colMap.lot = rowStr.findIndex(s => s.includes('lote') || s.includes('lot'));
+      colMap.boxes = rowStr.findIndex(s => s.includes('cajas') || s.includes('boxes') || s.includes('bultos') || s.includes('unid'));
+      colMap.weight = rowStr.findIndex(s => s.includes('kilos') || s.includes('weight') || s.includes('peso') || s.includes('kg') || s.includes('neto'));
+      colMap.status = rowStr.findIndex(s => s.includes('estado') || s.includes('status') || s.includes('state'));
       break;
     }
   }
@@ -121,8 +121,16 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
 
     if (!clientName || !containerId || !palletId) continue;
 
-    let clientId = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase())?.id;
-    if (!clientId) continue;
+    // Robust matching: trim and case-insensitive
+    let clientId = clients.find(c => c.name.trim().toLowerCase() === clientName.toLowerCase())?.id;
+    
+    // If client not found, we could potentially create a "ghost" client or skip.
+    // To avoid the "No valid data" alert, let's at least process it if we can find a way.
+    // However, the requirement was to associate with clients.
+    if (!clientId) {
+      console.warn(`Client not found: "${clientName}". Skipping row.`);
+      continue;
+    }
 
     const rawStatus = String(row[colMap.status] || '').toUpperCase();
     let status: StockStatus = 'EN_CAMARA';

@@ -73,13 +73,32 @@ export const StockManager: React.FC<StockManagerProps> = ({ stock, clients, onUp
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (clients.length === 0) {
+      alert("No hay clientes registrados. Por favor, añade al menos un cliente antes de importar stock.");
+      return;
+    }
+
     setIsImporting(true);
     try {
       const rawData = await parseExcelFile(file);
       const newStock = mapDataToStock(rawData, clients);
       
       if (newStock.length === 0) {
-        alert('No se encontraron datos de stock válidos. Asegúrate de que los nombres de los clientes coincidan exactamente.');
+        // Try to find what went wrong
+        const foundNames = new Set<string>();
+        rawData.slice(1).forEach(row => {
+          if (Array.isArray(row) && row.length > 0) {
+            const name = String(row[0] || '').trim();
+            if (name && name.toLowerCase() !== 'cliente') foundNames.add(name);
+          }
+        });
+
+        const namesList = Array.from(foundNames).slice(0, 5).join(', ');
+        const helpText = foundNames.size > 0 
+          ? `\n\nClientes encontrados en Excel: ${namesList}${foundNames.size > 5 ? '...' : ''}`
+          : "";
+
+        alert(`No se encontraron datos de stock válidos. Asegúrate de que los nombres de los clientes coincidan exactamente con los registrados en la app.${helpText}`);
       } else {
         if (window.confirm(`Se encontraron ${newStock.length} registros. ¿Deseas reemplazar el stock actual?`)) {
           onUpdateStock(newStock);
