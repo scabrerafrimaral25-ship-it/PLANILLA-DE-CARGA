@@ -13,7 +13,8 @@ import {
   ChevronUp, 
   AlertCircle,
   BarChart3,
-  Box
+  Box,
+  Users
 } from 'lucide-react';
 import { parseExcelFile, mapDataToStock } from '../utils/excel';
 
@@ -164,6 +165,34 @@ export const StockManager: React.FC<StockManagerProps> = ({ stock, clients, onUp
           <div className="text-3xl font-bold text-slate-900 dark:text-white">
             {new Set(stock.map(s => s.containerId)).size} <span className="text-sm font-normal opacity-60">activos</span>
           </div>
+        </div>
+      </div>
+
+      {/* Totals by Client Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Users className="w-4 h-4 text-indigo-600" />
+            Resumen de Kilos por Cliente
+          </h3>
+        </div>
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {clients.map(client => {
+            const total = totalsByClient[client.id] || { weight: 0, boxes: 0, pallets: 0 };
+            if (total.pallets === 0) return null;
+            return (
+              <div key={client.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-500 truncate mb-1">{client.name}</p>
+                <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">
+                  {total.weight.toLocaleString()} <span className="text-[10px] font-normal">kg</span>
+                </p>
+                <div className="flex justify-between mt-1 text-[10px] text-slate-400">
+                  <span>{total.pallets} pallets</span>
+                  <span>{total.boxes} cajas</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
