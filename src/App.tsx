@@ -10,7 +10,7 @@ import { LoadingPlan } from './components/LoadingPlan';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
 import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client, StockItem, Order, ShippingContainer } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList, Truck, Grid3X3 } from 'lucide-react';
+import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList, Truck, Grid3X3, Package } from 'lucide-react';
 import { ClientManager } from './components/ClientManager';
 import { StockManager } from './components/StockManager';
 import { OrderManager } from './components/OrderManager';
@@ -18,13 +18,14 @@ import { ContainerBuilder } from './components/ContainerBuilder';
 
 import { WarehouseMap } from './components/WarehouseMap';
 import { TraceabilityView } from './components/TraceabilityView';
+import { PickingManager } from './components/PickingManager';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
   const [stockData, setStockData] = useState<StockItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [containers, setContainers] = useState<ShippingContainer[]>([]);
-  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos' | 'contenedores' | 'mapa' | 'trazabilidad'>('carga');
+  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos' | 'contenedores' | 'mapa' | 'trazabilidad' | 'picking'>('carga');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
@@ -334,6 +335,17 @@ export default function App() {
                 Pedidos
               </button>
               <button
+                onClick={() => setActiveTab('picking')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === 'picking' 
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Package className="w-4 h-4" />
+                Picking
+              </button>
+              <button
                 onClick={() => setActiveTab('contenedores')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
                   activeTab === 'contenedores' 
@@ -474,6 +486,21 @@ export default function App() {
                 orders={orders}
                 clients={clients}
                 stock={stockData}
+                onUpdateOrders={(newOrders) => setOrders(newOrders)}
+              />
+            </motion.div>
+          ) : activeTab === 'picking' ? (
+            <motion.div
+              key="picking-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <PickingManager 
+                orders={orders}
+                stock={stockData}
+                clients={clients}
+                onUpdateStock={(newStock) => setStockData(newStock)}
                 onUpdateOrders={(newOrders) => setOrders(newOrders)}
               />
             </motion.div>
