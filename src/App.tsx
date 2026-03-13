@@ -10,18 +10,20 @@ import { LoadingPlan } from './components/LoadingPlan';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
 import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client, StockItem, Order, ShippingContainer } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList, Truck } from 'lucide-react';
+import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList, Truck, Grid3X3 } from 'lucide-react';
 import { ClientManager } from './components/ClientManager';
 import { StockManager } from './components/StockManager';
 import { OrderManager } from './components/OrderManager';
 import { ContainerBuilder } from './components/ContainerBuilder';
+
+import { WarehouseMap } from './components/WarehouseMap';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
   const [stockData, setStockData] = useState<StockItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [containers, setContainers] = useState<ShippingContainer[]>([]);
-  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos' | 'contenedores'>('carga');
+  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos' | 'contenedores' | 'mapa'>('carga');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
@@ -341,6 +343,17 @@ export default function App() {
                 <Truck className="w-4 h-4" />
                 Contenedores
               </button>
+              <button
+                onClick={() => setActiveTab('mapa')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === 'mapa' 
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Grid3X3 className="w-4 h-4" />
+                Mapa Cámara
+              </button>
             </nav>
             
             {(appSettings.logo || selectedClient) && (
@@ -467,6 +480,20 @@ export default function App() {
                 onUpdateContainers={(newContainers) => setContainers(newContainers)}
                 onUpdateStock={(newStock) => setStockData(newStock)}
                 onUpdateOrders={(newOrders) => setOrders(newOrders)}
+              />
+            </motion.div>
+          ) : activeTab === 'mapa' ? (
+            <motion.div
+              key="map-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <WarehouseMap 
+                containers={containers}
+                clients={clients}
+                orders={orders}
+                onUpdateContainers={(newContainers) => setContainers(newContainers)}
               />
             </motion.div>
           ) : masterData.length === 0 ? (

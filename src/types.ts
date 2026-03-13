@@ -73,6 +73,14 @@ export interface ShippingContainer {
   totalWeight: number;
   status: 'preparado' | 'despachado';
   details: ContainerDetail[];
+  positionId?: string;
+}
+
+export interface StoragePosition {
+  id: string;
+  row: string;
+  column: number;
+  containerId?: string;
 }
 
 export interface SavedPlan {
