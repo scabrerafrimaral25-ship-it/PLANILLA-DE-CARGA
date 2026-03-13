@@ -17,13 +17,14 @@ import { OrderManager } from './components/OrderManager';
 import { ContainerBuilder } from './components/ContainerBuilder';
 
 import { WarehouseMap } from './components/WarehouseMap';
+import { TraceabilityView } from './components/TraceabilityView';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
   const [stockData, setStockData] = useState<StockItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [containers, setContainers] = useState<ShippingContainer[]>([]);
-  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos' | 'contenedores' | 'mapa'>('carga');
+  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos' | 'contenedores' | 'mapa' | 'trazabilidad'>('carga');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
@@ -354,6 +355,17 @@ export default function App() {
                 <Grid3X3 className="w-4 h-4" />
                 Mapa Cámara
               </button>
+              <button
+                onClick={() => setActiveTab('trazabilidad')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === 'trazabilidad' 
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <History className="w-4 h-4" />
+                Trazabilidad
+              </button>
             </nav>
             
             {(appSettings.logo || selectedClient) && (
@@ -494,6 +506,19 @@ export default function App() {
                 clients={clients}
                 orders={orders}
                 onUpdateContainers={(newContainers) => setContainers(newContainers)}
+              />
+            </motion.div>
+          ) : activeTab === 'trazabilidad' ? (
+            <motion.div
+              key="trace-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <TraceabilityView 
+                stock={stockData}
+                containers={containers}
+                clients={clients}
               />
             </motion.div>
           ) : masterData.length === 0 ? (
