@@ -29,10 +29,10 @@ export const TraceabilityView: React.FC<TraceabilityViewProps> = ({ stock, conta
     
     // Search in stock (current and past)
     return stock.filter(item => 
-      item.lot.toLowerCase().includes(term) ||
-      item.palletId.toLowerCase().includes(term) ||
-      item.product.toLowerCase().includes(term) ||
-      item.containerId.toLowerCase().includes(term)
+      (item.lot || '').toLowerCase().includes(term) ||
+      (item.palletId || '').toLowerCase().includes(term) ||
+      (item.product || '').toLowerCase().includes(term) ||
+      (item.containerId || '').toLowerCase().includes(term)
     );
   }, [stock, searchTerm]);
 

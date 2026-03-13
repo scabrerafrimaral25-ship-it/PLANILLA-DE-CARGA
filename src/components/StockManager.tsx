@@ -35,10 +35,10 @@ export const StockManager: React.FC<StockManagerProps> = ({ stock, clients, onUp
   const filteredStock = useMemo(() => {
     return stock.filter(item => {
       const matchesSearch = 
-        item.containerId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.palletId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.lot.toLowerCase().includes(searchTerm.toLowerCase());
+        (item.containerId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.palletId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.product || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.lot || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesClient = selectedClientFilter === 'all' || item.clientId === selectedClientFilter;
       const matchesStatus = selectedStatusFilter === 'all' || item.status === selectedStatusFilter;

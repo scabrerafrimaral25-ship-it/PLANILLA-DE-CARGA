@@ -41,11 +41,11 @@ export const PickingManager: React.FC<PickingManagerProps> = ({
 
   const availablePallets = useMemo(() => {
     if (!selectedOrder) return [];
-    const orderProducts = selectedOrder.items.map(i => i.product.toLowerCase().trim());
+    const orderProducts = selectedOrder.items.map(i => (i.product || '').toLowerCase().trim()).filter(Boolean);
     return stock.filter(item => 
       item.clientId === selectedOrder.clientId &&
       item.status === 'EN_CAMARA' &&
-      orderProducts.includes(item.product.toLowerCase().trim())
+      orderProducts.includes((item.product || '').toLowerCase().trim())
     );
   }, [selectedOrder, stock]);
 

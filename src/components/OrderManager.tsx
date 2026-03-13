@@ -44,7 +44,8 @@ export const OrderManager: React.FC<OrderManagerProps> = ({ orders, clients, sto
   const availableStock = useMemo(() => {
     const totals: Record<string, { weight: number, boxes: number }> = {};
     stock.filter(s => s.status === 'EN_CAMARA').forEach(item => {
-      const prod = item.product.toLowerCase().trim();
+      const prod = (item.product || '').toLowerCase().trim();
+      if (!prod) return;
       if (!totals[prod]) totals[prod] = { weight: 0, boxes: 0 };
       totals[prod].weight += item.weight;
       totals[prod].boxes += item.boxes;
@@ -56,9 +57,9 @@ export const OrderManager: React.FC<OrderManagerProps> = ({ orders, clients, sto
     return orders.filter(order => {
       const client = clients.find(c => c.id === order.clientId);
       const matchesSearch = 
-        client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.items.some(i => i.product.toLowerCase().includes(searchTerm.toLowerCase()));
+        (client?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.items.some(i => (i.product || '').toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesClient = selectedClientFilter === 'all' || order.clientId === selectedClientFilter;
 
@@ -114,7 +115,7 @@ export const OrderManager: React.FC<OrderManagerProps> = ({ orders, clients, sto
   };
 
   const checkStock = (product: string, requestedKilos: number) => {
-    const available = availableStock[product.toLowerCase().trim()]?.weight || 0;
+    const available = availableStock[(product || '').toLowerCase().trim()]?.weight || 0;
     return {
       isEnough: available >= requestedKilos,
       available

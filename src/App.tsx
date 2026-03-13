@@ -10,7 +10,7 @@ import { LoadingPlan } from './components/LoadingPlan';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
 import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client, StockItem, Order, ShippingContainer } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList, Truck, Grid3X3, Package } from 'lucide-react';
+import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList, Truck, Grid3X3, Package, X, Lock } from 'lucide-react';
 import { ClientManager } from './components/ClientManager';
 import { StockManager } from './components/StockManager';
 import { OrderManager } from './components/OrderManager';
@@ -19,6 +19,7 @@ import { ContainerBuilder } from './components/ContainerBuilder';
 import { WarehouseMap } from './components/WarehouseMap';
 import { TraceabilityView } from './components/TraceabilityView';
 import { PickingManager } from './components/PickingManager';
+import { AdminPanel } from './components/AdminPanel';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
@@ -34,6 +35,7 @@ export default function App() {
   const [showSavedPlans, setShowSavedPlans] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [showClientManager, setShowClientManager] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings>({
     logo: null,
@@ -397,6 +399,14 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => setShowAdminPanel(true)}
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
+              title="Panel de Administración"
+            >
+              <Lock className="w-5 h-5" />
+            </button>
+
             <button
               onClick={() => setShowClientManager(true)}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
@@ -809,6 +819,10 @@ export default function App() {
             </motion.div>
           </div>
         )}
+
+        {showAdminPanel && (
+          <AdminPanel onClose={() => setShowAdminPanel(false)} />
+        )}
       </AnimatePresence>
 
       <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8 mt-auto print:hidden">
@@ -819,22 +833,3 @@ export default function App() {
     </div>
   );
 }
-
-// Helper for X icon
-const X = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-    onClick={onClick}
-  >
-    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-  </svg>
-);
