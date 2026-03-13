@@ -15,3 +15,16 @@ export interface ContainerGroup {
   totalBoxes: number;
   totalWeight: number;
 }
+
+export interface SavedPlan {
+  id: string;
+  name: string;
+  timestamp: number;
+  masterData: PalletData[];
+  searchIds: string[];
+}
+
+export interface AppSettings {
+  logo: string | null;
+  darkMode: boolean;
+}

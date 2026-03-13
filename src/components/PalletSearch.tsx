@@ -90,13 +90,13 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8"
+      className="w-full max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 mb-8"
     >
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left: Input & Actions */}
         <div className="flex-1 space-y-4">
-          <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Search className="w-5 h-5 text-indigo-600" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <Search className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             Buscar Pallets
           </h3>
           
@@ -112,7 +112,7 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
                   }
                 }}
                 placeholder="Ingresa uno o varios números (separados por espacio o coma)..."
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all font-mono text-sm min-h-[42px] max-h-32 resize-none"
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all font-mono text-sm min-h-[42px] max-h-32 resize-none"
                 rows={1}
               />
             </div>
@@ -126,8 +126,8 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
             </button>
           </div>
 
-          <div className="pt-4 border-t border-slate-100">
-            <p className="text-sm text-slate-500 mb-3">O importa una lista desde archivo:</p>
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">O importa una lista desde archivo:</p>
             <div className="flex gap-3">
               <input
                 type="file"
@@ -139,7 +139,7 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isProcessing}
-                className="flex-1 flex items-center justify-center px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                className="flex-1 flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
               >
                 {isProcessing ? (
                   <span className="animate-pulse">Procesando...</span>
@@ -151,16 +151,16 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
                 )}
               </button>
             </div>
-            <p className="text-xs text-slate-400 mt-2">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
               El sistema extraerá automáticamente todos los números de 6-7 dígitos (Número de Lote) del archivo PDF o Excel.
             </p>
           </div>
         </div>
 
         {/* Right: Current List */}
-        <div className="w-full md:w-1/3 bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col max-h-80">
+        <div className="w-full md:w-1/3 bg-slate-50 dark:bg-slate-800/30 rounded-xl p-4 border border-slate-100 dark:border-slate-800 flex flex-col max-h-80">
           <div className="flex justify-between items-center mb-3">
-            <h4 className="font-medium text-slate-700 text-sm">Lista de Búsqueda ({currentIds.length})</h4>
+            <h4 className="font-medium text-slate-700 dark:text-slate-300 text-sm">Lista de Búsqueda ({currentIds.length})</h4>
             {currentIds.length > 0 && (
               <div className="flex gap-3">
                 {currentIds.some(id => !validIds.includes(id)) && (
@@ -169,7 +169,7 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
                       const onlyValid = currentIds.filter(id => validIds.includes(id));
                       onSearch(onlyValid);
                     }}
-                    className="text-xs text-orange-600 hover:text-orange-800 font-medium"
+                    className="text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 font-medium"
                   >
                     Borrar No Encontrados
                   </button>
@@ -188,7 +188,7 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
           <div className="flex-1 overflow-y-auto space-y-2 pr-2">
             <AnimatePresence initial={false}>
               {currentIds.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-8">
+                <p className="text-sm text-slate-400 dark:text-slate-600 text-center py-8">
                   La lista está vacía.
                 </p>
               ) : (
@@ -201,16 +201,16 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       className={`flex justify-between items-center px-3 py-2 rounded border shadow-sm group ${
-                        isValid ? 'bg-white border-slate-200' : 'bg-red-50 border-red-200'
+                        isValid ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/30'
                       }`}
                     >
-                      <span className={`font-mono text-sm ${isValid ? 'text-slate-700' : 'text-red-700 font-medium'}`}>
+                      <span className={`font-mono text-sm ${isValid ? 'text-slate-700 dark:text-slate-300' : 'text-red-700 dark:text-red-400 font-medium'}`}>
                         {id}
-                        {!isValid && <span className="ml-2 text-[10px] text-red-500 uppercase tracking-wider">(No encontrado)</span>}
+                        {!isValid && <span className="ml-2 text-[10px] text-red-500 dark:text-red-400 uppercase tracking-wider">(No encontrado)</span>}
                       </span>
                       <button
                         onClick={() => handleRemove(id)}
-                        className={`${isValid ? 'text-slate-300' : 'text-red-300'} hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100`}
+                        className={`${isValid ? 'text-slate-300 dark:text-slate-700' : 'text-red-300 dark:text-red-700'} hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100`}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -231,21 +231,21 @@ export const PalletSearch: React.FC<PalletSearchProps> = ({ onSearch, onClear, c
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
             >
               <div className="p-6">
-                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 mx-auto">
-                  <AlertCircle className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 mx-auto">
+                  <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
-                <h3 className="text-xl font-bold text-center text-slate-900 mb-2">
+                <h3 className="text-xl font-bold text-center text-slate-900 dark:text-white mb-2">
                   Pallets no encontrados
                 </h3>
-                <p className="text-center text-slate-600 mb-4">
+                <p className="text-center text-slate-600 dark:text-slate-400 mb-4">
                   Los siguientes pallets que ingresaste no existen en la planilla maestra:
                 </p>
-                <div className="bg-slate-50 p-3 rounded-lg max-h-32 overflow-y-auto mb-6 flex flex-wrap gap-2 justify-center border border-slate-200">
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg max-h-32 overflow-y-auto mb-6 flex flex-wrap gap-2 justify-center border border-slate-200 dark:border-slate-700">
                   {missingAlert.map(id => (
-                    <span key={id} className="bg-white border border-slate-200 px-2 py-1 rounded text-sm font-mono text-slate-700">
+                    <span key={id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-sm font-mono text-slate-700 dark:text-slate-300">
                       {id}
                     </span>
                   ))}

@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { PalletSearch } from './components/PalletSearch';
 import { LoadingPlan } from './components/LoadingPlan';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
-import { PalletData, ContainerGroup } from './types';
+import { PalletData, ContainerGroup, SavedPlan, AppSettings } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle } from 'lucide-react';
+import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon } from 'lucide-react';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
@@ -18,6 +18,52 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
   const [searchIds, setSearchIds] = useState<string[]>([]);
+  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
+  const [showSavedPlans, setShowSavedPlans] = useState(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>({
+    logo: null,
+    darkMode: false,
+  });
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const storedPlans = localStorage.getItem('saved_plans');
+    if (storedPlans) {
+      try {
+        setSavedPlans(JSON.parse(storedPlans));
+      } catch (e) {
+        console.error('Error loading saved plans', e);
+      }
+    }
+
+    const storedSettings = localStorage.getItem('app_settings');
+    if (storedSettings) {
+      try {
+        const settings = JSON.parse(storedSettings);
+        setAppSettings(settings);
+        if (settings.darkMode) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {
+        console.error('Error loading settings', e);
+      }
+    }
+  }, []);
+
+  // Save settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('app_settings', JSON.stringify(appSettings));
+    if (appSettings.darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [appSettings]);
+
+  // Save plans to localStorage
+  useEffect(() => {
+    localStorage.setItem('saved_plans', JSON.stringify(savedPlans));
+  }, [savedPlans]);
 
   const handleFileUpload = async (file: File) => {
     setLoading(true);
@@ -50,6 +96,52 @@ export default function App() {
 
   const handleClearSearch = () => {
     setSearchIds([]);
+  };
+
+  const handleSavePlan = () => {
+    if (masterData.length === 0) return;
+    
+    const name = window.prompt('Nombre para esta planilla:', `Carga ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`);
+    if (!name) return;
+
+    const newPlan: SavedPlan = {
+      id: crypto.randomUUID(),
+      name,
+      timestamp: Date.now(),
+      masterData,
+      searchIds,
+    };
+
+    setSavedPlans(prev => [newPlan, ...prev]);
+    alert('Planilla guardada correctamente.');
+  };
+
+  const handleLoadPlan = (plan: SavedPlan) => {
+    setMasterData(plan.masterData);
+    setSearchIds(plan.searchIds);
+    setShowSavedPlans(false);
+  };
+
+  const handleDeletePlan = (id: string) => {
+    if (window.confirm('¿Estás seguro de eliminar esta planilla guardada?')) {
+      setSavedPlans(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setAppSettings(prev => ({ ...prev, logo: base64 }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const toggleDarkMode = () => {
+    setAppSettings(prev => ({ ...prev, darkMode: !prev.darkMode }));
   };
 
   const { groups, notFoundIds } = useMemo(() => {
@@ -98,25 +190,67 @@ export default function App() {
   }, [masterData, searchIds]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-20 transition-colors duration-300">
       
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-              <PackageCheck className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Gestor de Carga
-            </h1>
-          </div>
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-indigo-600 p-2 rounded-lg">
+                <PackageCheck className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Gestor de Carga
+              </h1>
+            </div>
+            
+            {appSettings.logo && (
+              <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
+            )}
+            
+            {appSettings.logo && (
+              <img src={appSettings.logo} alt="Logo" className="h-10 max-w-[120px] object-contain" />
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400"
+              title={appSettings.darkMode ? "Modo Claro" : "Modo Oscuro"}
+            >
+              {appSettings.darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
+            <button
+              onClick={() => setShowSavedPlans(true)}
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 relative"
+              title="Planillas Guardadas"
+            >
+              <History className="w-5 h-5" />
+              {savedPlans.length > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"></span>
+              )}
+            </button>
+
+            <label className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400 cursor-pointer" title="Subir Logo">
+              <ImageIcon className="w-5 h-5" />
+              <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+            </label>
+
             {masterData.length > 0 && (
-              <>
-                <div className="text-sm text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full hidden sm:block">
-                  {masterData.length} Pallets Cargados
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSavePlan}
+                  className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium shadow-sm"
+                >
+                  <Save className="w-4 h-4" />
+                  <span className="hidden sm:inline">Guardar</span>
+                </button>
+                
+                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+                
                 <button
                   onClick={() => {
                     if (window.confirm('¿Estás seguro de que quieres cargar un nuevo archivo? Se perderá la búsqueda actual.')) {
@@ -124,11 +258,11 @@ export default function App() {
                       setSearchIds([]);
                     }
                   }}
-                  className="text-sm text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
+                  className="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
                 >
-                  Cambiar Archivo
+                  Nuevo
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -146,30 +280,42 @@ export default function App() {
               className="flex flex-col items-center justify-center min-h-[60vh]"
             >
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-slate-900 mb-4">
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
                   Comencemos a organizar tu carga
                 </h2>
-                <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
-                  Sube tu planilla maestra de Excel para comenzar a buscar y agrupar pallets por contenedor automáticamente.
+                <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-8">
+                  Sube tu planilla maestra de Excel o carga una planilla guardada anteriormente para comenzar.
                 </p>
                 
-                <div className="bg-white p-6 rounded-xl border border-slate-200 max-w-lg mx-auto text-left shadow-sm">
-                  <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 max-w-lg mx-auto text-left shadow-sm">
+                  <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-2 text-indigo-600" />
-                    Formato esperado (basado en tu nueva captura):
+                    Formato esperado:
                   </h3>
-                  <ul className="text-sm text-slate-600 space-y-2 list-disc list-inside">
-                    <li>Columna C: Contenedor (ej: FMLU 854344-)</li>
+                  <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside">
+                    <li>Columna C: Contenedor</li>
                     <li>Columna D: Pallets/Cantidad</li>
-                    <li>Columna E: Cajas</li>
+                    <li>Columna E: Bultos</li>
                     <li>Columna F: Kilos</li>
                     <li>Columna G: Contenido</li>
-                    <li>Columna H: Nro Lote / Pallet ID (ej: 278293)</li>
+                    <li>Columna H: Pallet ID (6-7 dígitos)</li>
                   </ul>
                 </div>
               </div>
               
-              <FileUpload onFileUpload={handleFileUpload} />
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
+                <FileUpload onFileUpload={handleFileUpload} />
+                
+                {savedPlans.length > 0 && (
+                  <button
+                    onClick={() => setShowSavedPlans(true)}
+                    className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-medium shadow-sm"
+                  >
+                    <History className="w-5 h-5 text-indigo-600" />
+                    Ver Planillas Guardadas
+                  </button>
+                )}
+              </div>
               
               {loading && (
                 <div className="mt-8 flex items-center text-indigo-600 font-medium animate-pulse">
@@ -179,39 +325,39 @@ export default function App() {
               
               {error && (
                 <div className="mt-8 w-full max-w-2xl mx-auto">
-                  <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-4">
+                  <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg mb-4">
                     <div className="flex items-center mb-2">
                       <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
                       <span className="font-medium">{error}</span>
                     </div>
-                    <p className="text-sm text-red-500 ml-7">
+                    <p className="text-sm opacity-80 ml-7">
                       Verifica que el archivo no esté protegido con contraseña y sea un Excel válido (.xlsx o .xls).
                     </p>
                   </div>
 
                   {debugData && (
-                    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm overflow-hidden">
-                      <h3 className="text-sm font-semibold text-slate-700 mb-2">Vista Previa de Datos (Primeras 10 filas)</h3>
-                      <p className="text-xs text-slate-500 mb-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm overflow-hidden">
+                      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Vista Previa de Datos (Primeras 10 filas)</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
                         Esto es lo que el sistema está leyendo de tu archivo. Verifica si los datos se ven correctos.
                       </p>
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left border-collapse">
                           <thead>
                             <tr>
-                              <th className="border border-slate-200 p-1 bg-slate-50">#</th>
+                              <th className="border border-slate-200 dark:border-slate-800 p-1 bg-slate-50 dark:bg-slate-800">#</th>
                               {debugData[0]?.map((_: any, i: number) => (
-                                <th key={i} className="border border-slate-200 p-1 bg-slate-50">Col {String.fromCharCode(65 + i)}</th>
+                                <th key={i} className="border border-slate-200 dark:border-slate-800 p-1 bg-slate-50 dark:bg-slate-800">Col {String.fromCharCode(65 + i)}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
                             {debugData.map((row, i) => (
                               <tr key={i}>
-                                <td className="border border-slate-200 p-1 font-mono text-slate-400">{i + 1}</td>
+                                <td className="border border-slate-200 dark:border-slate-800 p-1 font-mono text-slate-400">{i + 1}</td>
                                 {row.map((cell: any, j: number) => (
-                                  <td key={j} className="border border-slate-200 p-1 truncate max-w-[150px]">
-                                    {cell === null || cell === undefined ? <span className="text-slate-300">vacío</span> : String(cell)}
+                                  <td key={j} className="border border-slate-200 dark:border-slate-800 p-1 truncate max-w-[150px]">
+                                    {cell === null || cell === undefined ? <span className="text-slate-300 dark:text-slate-700">vacío</span> : String(cell)}
                                   </td>
                                 ))}
                               </tr>
@@ -245,6 +391,7 @@ export default function App() {
                   groups={groups} 
                   notFoundIds={notFoundIds} 
                   searchIds={searchIds}
+                  logo={appSettings.logo}
                 />
               </div>
             </motion.div>
@@ -253,11 +400,102 @@ export default function App() {
 
       </main>
 
-      <footer className="bg-white border-t border-slate-200 py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-500 text-sm">
+      {/* Saved Plans Sidebar/Modal */}
+      <AnimatePresence>
+        {showSavedPlans && (
+          <div className="fixed inset-0 z-50 flex items-center justify-end print:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSavedPlans(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              className="relative w-full max-w-md h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+            >
+              <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <History className="w-5 h-5 text-indigo-600" />
+                  Planillas Guardadas
+                </h3>
+                <button
+                  onClick={() => setShowSavedPlans(false)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6 text-slate-500" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {savedPlans.length === 0 ? (
+                  <div className="text-center py-20">
+                    <History className="w-12 h-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
+                    <p className="text-slate-500">No tienes planillas guardadas aún.</p>
+                  </div>
+                ) : (
+                  savedPlans.map(plan => (
+                    <div
+                      key={plan.id}
+                      className="group bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer"
+                      onClick={() => handleLoadPlan(plan)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {plan.name}
+                        </h4>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePlan(plan.id);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                        <span>{new Date(plan.timestamp).toLocaleString()}</span>
+                        <span className="bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">
+                          {plan.masterData.length} pallets
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8 mt-auto print:hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-500 dark:text-slate-400 text-sm">
           <p>&copy; {new Date().getFullYear()} Gestor de Carga de Pallets. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>
   );
 }
+
+// Helper for X icon
+const X = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+    onClick={onClick}
+  >
+    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+  </svg>
+);
