@@ -8,18 +8,20 @@ import { FileUpload } from './components/FileUpload';
 import { PalletSearch } from './components/PalletSearch';
 import { LoadingPlan } from './components/LoadingPlan';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
-import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client, StockItem, Order } from './types';
+import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client, StockItem, Order, ShippingContainer } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList } from 'lucide-react';
+import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard, ClipboardList, Truck } from 'lucide-react';
 import { ClientManager } from './components/ClientManager';
 import { StockManager } from './components/StockManager';
 import { OrderManager } from './components/OrderManager';
+import { ContainerBuilder } from './components/ContainerBuilder';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
   const [stockData, setStockData] = useState<StockItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos'>('carga');
+  const [containers, setContainers] = useState<ShippingContainer[]>([]);
+  const [activeTab, setActiveTab] = useState<'carga' | 'stock' | 'pedidos' | 'contenedores'>('carga');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
@@ -60,6 +62,15 @@ export default function App() {
         setOrders(JSON.parse(storedOrders));
       } catch (e) {
         console.error('Error loading orders', e);
+      }
+    }
+
+    const storedContainers = localStorage.getItem('app_containers');
+    if (storedContainers) {
+      try {
+        setContainers(JSON.parse(storedContainers));
+      } catch (e) {
+        console.error('Error loading containers', e);
       }
     }
 
@@ -110,6 +121,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('app_orders', JSON.stringify(orders));
   }, [orders]);
+
+  // Save containers to localStorage
+  useEffect(() => {
+    localStorage.setItem('app_containers', JSON.stringify(containers));
+  }, [containers]);
 
   // Save clients to localStorage
   useEffect(() => {
@@ -314,6 +330,17 @@ export default function App() {
                 <ClipboardList className="w-4 h-4" />
                 Pedidos
               </button>
+              <button
+                onClick={() => setActiveTab('contenedores')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === 'contenedores' 
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Truck className="w-4 h-4" />
+                Contenedores
+              </button>
             </nav>
             
             {(appSettings.logo || selectedClient) && (
@@ -422,6 +449,23 @@ export default function App() {
                 orders={orders}
                 clients={clients}
                 stock={stockData}
+                onUpdateOrders={(newOrders) => setOrders(newOrders)}
+              />
+            </motion.div>
+          ) : activeTab === 'contenedores' ? (
+            <motion.div
+              key="containers-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <ContainerBuilder 
+                orders={orders}
+                clients={clients}
+                stock={stockData}
+                containers={containers}
+                onUpdateContainers={(newContainers) => setContainers(newContainers)}
+                onUpdateStock={(newStock) => setStockData(newStock)}
                 onUpdateOrders={(newOrders) => setOrders(newOrders)}
               />
             </motion.div>

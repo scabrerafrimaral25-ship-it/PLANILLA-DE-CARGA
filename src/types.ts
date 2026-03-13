@@ -57,6 +57,24 @@ export interface Order {
   observations?: string;
 }
 
+export interface ContainerDetail {
+  containerId: string;
+  palletId: string;
+  product: string;
+  lot: string;
+  weight: number;
+}
+
+export interface ShippingContainer {
+  id: string;
+  clientId: string;
+  orderId: string;
+  assemblyDate: string;
+  totalWeight: number;
+  status: 'preparado' | 'despachado';
+  details: ContainerDetail[];
+}
+
 export interface SavedPlan {
   id: string;
   name: string;
