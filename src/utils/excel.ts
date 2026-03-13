@@ -37,6 +37,18 @@ export const parseExcelFile = (file: File): Promise<any[]> => {
 };
 
 export const mapDataToStock = (data: any[], clients: { id: string, name: string }[]): StockItem[] => {
+  // Normalize data: if a row is a single string with semicolons, split it
+  const normalizedData = data.map(row => {
+    if (Array.isArray(row) && row.length === 1 && typeof row[0] === 'string' && row[0].includes(';')) {
+      return row[0].split(';');
+    }
+    // Also handle cases where cells might have trailing semicolons
+    if (Array.isArray(row)) {
+      return row.map(cell => typeof cell === 'string' ? cell.replace(/;$/, '').trim() : cell);
+    }
+    return row;
+  });
+
   const stock: StockItem[] = [];
   
   // Smart Detection of Columns for Stock
@@ -53,11 +65,11 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
   };
 
   // 1. Find the header row
-  for (let i = 0; i < Math.min(data.length, 50); i++) {
-    const row = data[i];
+  for (let i = 0; i < Math.min(normalizedData.length, 50); i++) {
+    const row = normalizedData[i];
     if (!Array.isArray(row)) continue;
     
-    const rowStr = Array.from(row).map(cell => String(cell || '').toLowerCase());
+    const rowStr = Array.from(row).map(cell => String(cell || '').toLowerCase().replace(/;/g, '').trim());
     
     const clientIdx = rowStr.findIndex(s => s.includes('cliente') || s.includes('client'));
     const containerIdx = rowStr.findIndex(s => s.includes('contenedor') || s.includes('container') || s.includes('equipo'));
@@ -111,22 +123,19 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
 
   const startRow = headerRowIndex === -1 ? 0 : headerRowIndex + 1;
 
-  for (let i = startRow; i < data.length; i++) {
-    const row = data[i];
+  for (let i = startRow; i < normalizedData.length; i++) {
+    const row = normalizedData[i];
     if (!Array.isArray(row)) continue;
 
-    const clientName = String(row[colMap.client] || '').trim();
-    const containerId = String(row[colMap.container] || '').trim();
-    const palletId = String(row[colMap.pallet] || '').trim();
+    const clientName = String(row[colMap.client] || '').replace(/;/g, '').trim();
+    const containerId = String(row[colMap.container] || '').replace(/;/g, '').trim();
+    const palletId = String(row[colMap.pallet] || '').replace(/;/g, '').trim();
 
     if (!clientName || !containerId || !palletId) continue;
 
     // Robust matching: trim and case-insensitive
     let clientId = clients.find(c => c.name.trim().toLowerCase() === clientName.toLowerCase())?.id;
     
-    // If client not found, we could potentially create a "ghost" client or skip.
-    // To avoid the "No valid data" alert, let's at least process it if we can find a way.
-    // However, the requirement was to associate with clients.
     if (!clientId) {
       console.warn(`Client not found: "${clientName}". Skipping row.`);
       continue;
@@ -155,6 +164,17 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
 };
 
 export const mapDataToPallets = (data: any[]): PalletData[] => {
+  // Normalize data: if a row is a single string with semicolons, split it
+  const normalizedData = data.map(row => {
+    if (Array.isArray(row) && row.length === 1 && typeof row[0] === 'string' && row[0].includes(';')) {
+      return row[0].split(';');
+    }
+    if (Array.isArray(row)) {
+      return row.map(cell => typeof cell === 'string' ? cell.replace(/;$/, '').trim() : cell);
+    }
+    return row;
+  });
+
   const pallets: PalletData[] = [];
   
   // Smart Detection of Columns
@@ -169,13 +189,11 @@ export const mapDataToPallets = (data: any[]): PalletData[] => {
   };
 
   // 1. Find the header row
-  // We look for a row that contains "Contenedor" and ("Lote" or "Pallet" or "ID")
-  for (let i = 0; i < Math.min(data.length, 50); i++) {
-    const row = data[i];
+  for (let i = 0; i < Math.min(normalizedData.length, 50); i++) {
+    const row = normalizedData[i];
     if (!Array.isArray(row)) continue;
     
-    // Fix: Handle sparse arrays from Excel by using Array.from and ensuring strings
-    const rowStr = Array.from(row).map(cell => String(cell || '').toLowerCase());
+    const rowStr = Array.from(row).map(cell => String(cell || '').toLowerCase().replace(/;/g, '').trim());
     
     const containerIdx = rowStr.findIndex(s => s.includes('contenedor'));
     const loteIdx = rowStr.findIndex(s => s.includes('lote') || s.includes('nro lote') || s.includes('pallet id'));
@@ -185,7 +203,6 @@ export const mapDataToPallets = (data: any[]): PalletData[] => {
       colMap.container = containerIdx;
       colMap.pallet = loteIdx;
       
-      // Find other columns in this row
       colMap.quantity = rowStr.findIndex(s => s === 'pallets' || s.includes('cant'));
       colMap.boxes = rowStr.findIndex(s => s.includes('cajas') || s.includes('bultos'));
       colMap.weight = rowStr.findIndex(s => s.includes('kilos') || s.includes('peso') || s.includes('kg'));
