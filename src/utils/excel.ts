@@ -47,9 +47,10 @@ const COLUMN_DICTIONARY = {
   status: ["estado", "status", "state"]
 };
 
-function detectColumn(headers: string[], possibilities: string[]): number {
+function detectColumn(headers: any[], possibilities: string[]): number {
   return headers.findIndex(header => {
-    const h = header.toLowerCase().trim();
+    if (header === undefined || header === null) return false;
+    const h = String(header).toLowerCase().trim();
     return possibilities.some(p => h.includes(p));
   });
 }
@@ -110,7 +111,7 @@ export const mapDataToStock = (data: any[], existingClients: Client[]): { stock:
     if (firstCell.includes('cliente')) {
       const clientName = String(row[2] || row[1] || '').trim();
       if (clientName) {
-        let client = allClients.find(c => c.name.trim().toLowerCase() === clientName.toLowerCase());
+        let client = allClients.find(c => c && c.name && c.name.trim().toLowerCase() === clientName.toLowerCase());
         if (!client) {
           client = {
             id: String(row[1] || crypto.randomUUID()),
@@ -158,7 +159,7 @@ export const mapDataToStock = (data: any[], existingClients: Client[]): { stock:
     if (colMap.client !== -1) {
       const clientName = String(row[colMap.client] || '').trim();
       if (clientName) {
-        let client = allClients.find(c => c.name.trim().toLowerCase() === clientName.toLowerCase());
+        let client = allClients.find(c => c && c.name && c.name.trim().toLowerCase() === clientName.toLowerCase());
         if (!client) {
           client = {
             id: crypto.randomUUID(),
