@@ -22,9 +22,10 @@ interface StockManagerProps {
   stock: StockItem[];
   clients: Client[];
   onUpdateStock: (newStock: StockItem[]) => void;
+  onUpdateClients: (newClients: Client[]) => void;
 }
 
-export const StockManager: React.FC<StockManagerProps> = ({ stock, clients, onUpdateStock }) => {
+export const StockManager: React.FC<StockManagerProps> = ({ stock, clients, onUpdateStock, onUpdateClients }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClientFilter, setSelectedClientFilter] = useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
@@ -74,35 +75,50 @@ export const StockManager: React.FC<StockManagerProps> = ({ stock, clients, onUp
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (clients.length === 0) {
-      alert("No hay clientes registrados. Por favor, añade al menos un cliente antes de importar stock.");
-      return;
-    }
-
     setIsImporting(true);
     try {
       const rawData = await parseExcelFile(file);
-      const newStock = mapDataToStock(rawData, clients);
+      const { stock: newStock, newClients } = mapDataToStock(rawData, clients);
       
       if (newStock.length === 0) {
-        // Try to find what went wrong
-        const foundNames = new Set<string>();
-        rawData.slice(1).forEach(row => {
-          if (Array.isArray(row) && row.length > 0) {
-            const name = String(row[0] || '').trim();
-            if (name && name.toLowerCase() !== 'cliente') foundNames.add(name);
-          }
-        });
-
-        const namesList = Array.from(foundNames).slice(0, 5).join(', ');
-        const helpText = foundNames.size > 0 
-          ? `\n\nClientes encontrados en Excel: ${namesList}${foundNames.size > 5 ? '...' : ''}`
-          : "";
-
-        alert(`No se encontraron datos de stock válidos. Asegúrate de que los nombres de los clientes coincidan exactamente con los registrados en la app.${helpText}`);
+        alert("No se encontraron datos de stock válidos en el archivo.");
       } else {
-        if (window.confirm(`Se encontraron ${newStock.length} registros. ¿Deseas reemplazar el stock actual?`)) {
-          onUpdateStock(newStock);
+        let message = `Se encontraron ${newStock.length} registros de stock.`;
+        if (newClients.length > 0) {
+          message += `\nSe detectaron ${newClients.length} nuevos clientes que serán creados automáticamente.`;
+        }
+        
+        const choice = window.confirm(`${message}\n\n¿Deseas ACTUALIZAR el stock existente? (Los pallets con el mismo ID se actualizarán, los nuevos se añadirán).\n\nPresiona 'Cancelar' si prefieres REEMPLAZAR todo el stock.`);
+        
+        if (newClients.length > 0) {
+          onUpdateClients([...clients, ...newClients]);
+        }
+
+        if (choice) {
+          // Merge logic (Create or Update)
+          const mergedStock = [...stock];
+          newStock.forEach(newItem => {
+            const index = mergedStock.findIndex(s => s.palletId === newItem.palletId);
+            if (index !== -1) {
+              // Update existing
+              mergedStock[index] = { 
+                ...mergedStock[index], 
+                ...newItem, 
+                id: mergedStock[index].id // Keep internal ID
+              };
+            } else {
+              // Create new
+              mergedStock.push(newItem);
+            }
+          });
+          onUpdateStock(mergedStock);
+          alert("Stock actualizado correctamente.");
+        } else {
+          // Replace logic
+          if (window.confirm("¿Estás seguro de que deseas REEMPLAZAR todo el stock actual por el del archivo?")) {
+            onUpdateStock(newStock);
+            alert("Stock reemplazado correctamente.");
+          }
         }
       }
     } catch (err) {

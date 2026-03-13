@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { PalletData, StockItem, StockStatus } from '../types';
+import { PalletData, StockItem, StockStatus, Client } from '../types';
 
 export const parseExcelFile = (file: File): Promise<any[]> => {
   return new Promise((resolve, reject) => {
@@ -36,7 +36,7 @@ export const parseExcelFile = (file: File): Promise<any[]> => {
   });
 };
 
-export const mapDataToStock = (data: any[], clients: { id: string, name: string }[]): StockItem[] => {
+export const mapDataToStock = (data: any[], existingClients: Client[]): { stock: StockItem[], newClients: Client[] } => {
   // Normalize data: if a row is a single string with semicolons, split it
   const normalizedData = data.map(row => {
     if (Array.isArray(row) && row.length === 1 && typeof row[0] === 'string' && row[0].includes(';')) {
@@ -50,6 +50,8 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
   });
 
   const stock: StockItem[] = [];
+  const newClients: Client[] = [];
+  const allClients = [...existingClients];
   
   // Smart Detection of Columns for Stock
   let headerRowIndex = -1;
@@ -134,11 +136,20 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
     if (!clientName || !containerId || !palletId) continue;
 
     // Robust matching: trim and case-insensitive
-    let clientId = clients.find(c => c.name.trim().toLowerCase() === clientName.toLowerCase())?.id;
+    let client = allClients.find(c => c.name.trim().toLowerCase() === clientName.toLowerCase());
     
-    if (!clientId) {
-      console.warn(`Client not found: "${clientName}". Skipping row.`);
-      continue;
+    if (!client) {
+      // Create new client if not exists
+      const newClient: Client = {
+        id: crypto.randomUUID(),
+        name: clientName,
+        country: '',
+        operationType: 'Importación',
+        observations: 'Creado automáticamente durante importación de stock'
+      };
+      newClients.push(newClient);
+      allClients.push(newClient);
+      client = newClient;
     }
 
     const rawStatus = String(row[colMap.status] || '').toUpperCase();
@@ -148,7 +159,7 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
 
     stock.push({
       id: crypto.randomUUID(),
-      clientId,
+      clientId: client.id,
       containerId,
       palletId,
       product: String(row[colMap.product] || '').trim(),
@@ -160,7 +171,7 @@ export const mapDataToStock = (data: any[], clients: { id: string, name: string 
     });
   }
 
-  return stock;
+  return { stock, newClients };
 };
 
 export const mapDataToPallets = (data: any[]): PalletData[] => {

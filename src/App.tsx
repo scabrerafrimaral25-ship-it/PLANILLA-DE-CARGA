@@ -473,6 +473,7 @@ export default function App() {
                 stock={stockData} 
                 clients={clients} 
                 onUpdateStock={(newStock) => setStockData(newStock)} 
+                onUpdateClients={(newClients) => setClients(newClients)}
               />
             </motion.div>
           ) : activeTab === 'pedidos' ? (
