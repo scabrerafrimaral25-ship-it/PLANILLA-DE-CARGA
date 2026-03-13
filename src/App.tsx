@@ -8,13 +8,16 @@ import { FileUpload } from './components/FileUpload';
 import { PalletSearch } from './components/PalletSearch';
 import { LoadingPlan } from './components/LoadingPlan';
 import { parseExcelFile, mapDataToPallets } from './utils/excel';
-import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client } from './types';
+import { PalletData, ContainerGroup, SavedPlan, AppSettings, Client, StockItem } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus } from 'lucide-react';
+import { PackageCheck, AlertCircle, Save, History, Trash2, Moon, Sun, Image as ImageIcon, Users, ChevronRight, Globe, Plus, Database, LayoutDashboard } from 'lucide-react';
 import { ClientManager } from './components/ClientManager';
+import { StockManager } from './components/StockManager';
 
 export default function App() {
   const [masterData, setMasterData] = useState<PalletData[]>([]);
+  const [stockData, setStockData] = useState<StockItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'carga' | 'stock'>('carga');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any[] | null>(null);
@@ -37,6 +40,15 @@ export default function App() {
         setSavedPlans(JSON.parse(storedPlans));
       } catch (e) {
         console.error('Error loading saved plans', e);
+      }
+    }
+
+    const storedStock = localStorage.getItem('app_stock');
+    if (storedStock) {
+      try {
+        setStockData(JSON.parse(storedStock));
+      } catch (e) {
+        console.error('Error loading stock', e);
       }
     }
 
@@ -77,6 +89,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('saved_plans', JSON.stringify(savedPlans));
   }, [savedPlans]);
+
+  // Save stock to localStorage
+  useEffect(() => {
+    localStorage.setItem('app_stock', JSON.stringify(stockData));
+  }, [stockData]);
 
   // Save clients to localStorage
   useEffect(() => {
@@ -244,6 +261,34 @@ export default function App() {
               </h1>
             </div>
             
+            <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
+
+            {/* Navigation Tabs */}
+            <nav className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              <button
+                onClick={() => setActiveTab('carga')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === 'carga' 
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Planillas
+              </button>
+              <button
+                onClick={() => setActiveTab('stock')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === 'stock' 
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Database className="w-4 h-4" />
+                Stock
+              </button>
+            </nav>
+            
             {(appSettings.logo || selectedClient) && (
               <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
             )}
@@ -326,7 +371,20 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         <AnimatePresence mode="wait">
-          {masterData.length === 0 ? (
+          {activeTab === 'stock' ? (
+            <motion.div
+              key="stock-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <StockManager 
+                stock={stockData} 
+                clients={clients} 
+                onUpdateStock={(newStock) => setStockData(newStock)} 
+              />
+            </motion.div>
+          ) : masterData.length === 0 ? (
             <motion.div
               key="upload"
               initial={{ opacity: 0, y: 20 }}

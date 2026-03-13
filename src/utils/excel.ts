@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { PalletData } from '../types';
+import { PalletData, StockItem, StockStatus } from '../types';
 
 export const parseExcelFile = (file: File): Promise<any[]> => {
   return new Promise((resolve, reject) => {
@@ -34,6 +34,116 @@ export const parseExcelFile = (file: File): Promise<any[]> => {
     reader.onerror = () => reject(new Error("Error de lectura de archivo."));
     reader.readAsArrayBuffer(file);
   });
+};
+
+export const mapDataToStock = (data: any[], clients: { id: string, name: string }[]): StockItem[] => {
+  const stock: StockItem[] = [];
+  
+  // Smart Detection of Columns for Stock
+  let headerRowIndex = -1;
+  let colMap = {
+    client: -1,
+    container: -1,
+    pallet: -1,
+    product: -1,
+    lot: -1,
+    boxes: -1,
+    weight: -1,
+    status: -1
+  };
+
+  // 1. Find the header row
+  for (let i = 0; i < Math.min(data.length, 50); i++) {
+    const row = data[i];
+    if (!Array.isArray(row)) continue;
+    
+    const rowStr = Array.from(row).map(cell => String(cell || '').toLowerCase());
+    
+    const clientIdx = rowStr.findIndex(s => s.includes('cliente'));
+    const containerIdx = rowStr.findIndex(s => s.includes('contenedor'));
+    
+    if (clientIdx !== -1 && containerIdx !== -1) {
+      headerRowIndex = i;
+      colMap.client = clientIdx;
+      colMap.container = containerIdx;
+      colMap.pallet = rowStr.findIndex(s => s.includes('pallet') || s.includes('id'));
+      colMap.product = rowStr.findIndex(s => s.includes('producto') || s.includes('descrip') || s.includes('contenido'));
+      colMap.lot = rowStr.findIndex(s => s.includes('lote'));
+      colMap.boxes = rowStr.findIndex(s => s.includes('cajas') || s.includes('bultos'));
+      colMap.weight = rowStr.findIndex(s => s.includes('kilos') || s.includes('peso') || s.includes('kg'));
+      colMap.status = rowStr.findIndex(s => s.includes('estado'));
+      break;
+    }
+  }
+
+  // Fallback indices if detection fails
+  if (headerRowIndex === -1) {
+    colMap = {
+      client: 0,
+      container: 1,
+      pallet: 2,
+      product: 3,
+      lot: 4,
+      boxes: 5,
+      weight: 6,
+      status: 7
+    };
+    headerRowIndex = 0;
+  }
+
+  const parseNumber = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+      let clean = val.replace(/[^\d.,-]/g, '');
+      if (clean.includes('.') && clean.includes(',')) {
+        if (clean.lastIndexOf(',') > clean.lastIndexOf('.')) {
+          clean = clean.replace(/\./g, '').replace(',', '.');
+        } else {
+          clean = clean.replace(/,/g, '');
+        }
+      } else if (clean.includes(',')) {
+        clean = clean.replace(',', '.');
+      }
+      return parseFloat(clean) || 0;
+    }
+    return 0;
+  };
+
+  const startRow = headerRowIndex === -1 ? 0 : headerRowIndex + 1;
+
+  for (let i = startRow; i < data.length; i++) {
+    const row = data[i];
+    if (!Array.isArray(row)) continue;
+
+    const clientName = String(row[colMap.client] || '').trim();
+    const containerId = String(row[colMap.container] || '').trim();
+    const palletId = String(row[colMap.pallet] || '').trim();
+
+    if (!clientName || !containerId || !palletId) continue;
+
+    let clientId = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase())?.id;
+    if (!clientId) continue;
+
+    const rawStatus = String(row[colMap.status] || '').toUpperCase();
+    let status: StockStatus = 'EN_CAMARA';
+    if (rawStatus.includes('RESERVADO')) status = 'RESERVADO';
+    else if (rawStatus.includes('DESPACHADO')) status = 'DESPACHADO';
+
+    stock.push({
+      id: crypto.randomUUID(),
+      clientId,
+      containerId,
+      palletId,
+      product: String(row[colMap.product] || '').trim(),
+      lot: String(row[colMap.lot] || '').trim(),
+      boxes: parseNumber(row[colMap.boxes]),
+      weight: parseNumber(row[colMap.weight]),
+      status,
+      timestamp: Date.now()
+    });
+  }
+
+  return stock;
 };
 
 export const mapDataToPallets = (data: any[]): PalletData[] => {

@@ -24,6 +24,21 @@ export interface Client {
   observations: string;
 }
 
+export type StockStatus = 'EN_CAMARA' | 'RESERVADO' | 'DESPACHADO';
+
+export interface StockItem {
+  id: string;
+  clientId: string;
+  containerId: string;
+  palletId: string;
+  product: string;
+  lot: string;
+  boxes: number;
+  weight: number;
+  status: StockStatus;
+  timestamp: number;
+}
+
 export interface SavedPlan {
   id: string;
   name: string;
